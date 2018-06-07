@@ -1,6 +1,5 @@
 .idea/
 node_modules/
-platforms/
 www/js/app.js
 www/css/app.css
 www/mix-manifest.json
