@@ -121,6 +121,7 @@
                 }
                 else {
                     me.posRealTime.setGeometry(geometry);
+                    me.posRealTime.setGeometry(geometryPrecision);
                 }
 
 
