@@ -1,4 +1,6 @@
-let mix = require('laravel-mix');
+let mix = require('laravel-mix')
+require('laravel-mix-purgecss')
+require('laravel-mix-tailwind')
 
 /*
  |--------------------------------------------------------------------------
@@ -11,7 +13,22 @@ let mix = require('laravel-mix');
  |
  */
 
-mix.js('src/app.js', 'dist/').sass('src/app.scss', 'dist/');
+mix.setPublicPath('www')
+
+mix.js('assets/js/app.js', 'www/js/app.js')
+    .sass('assets/sass/app.scss', 'www/css/app.css')
+    .sourceMaps(false)
+    .tailwind()
+
+if (mix.inProduction()) {
+    mix.version()
+        .purgeCss({
+            globs: [
+                path.join(__dirname, 'www/index.html'),
+                path.join(__dirname, 'assets/**/**.*')
+            ]
+        })
+}
 
 // Full API
 // mix.js(src, output);
