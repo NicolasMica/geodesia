@@ -13,11 +13,6 @@ Install NPM dependencies
 cd da-vinci
 npm install
 ```
- 
-Setup cordova
-```shell
-npm run setup
-```
 
 Launch the browser development and navigate to [http://localhost:8000](http://localhost:8000)
 ```shell
