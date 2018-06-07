@@ -1,8 +1,12 @@
 import Vue from 'vue'
 
-window.events = new Vue
+document.addEventListener('deviceready', () => {
 
-const app = new Vue({
-    el: '#root',
-    template: '<App/>'
-})
+    window.events = new Vue
+
+    const app = new Vue({
+        el: '#root',
+        template: '<App/>'
+    })
+
+}, false);
