@@ -49,7 +49,7 @@
                     * LAYER FOND DE PLAN
                     * TODO CHANGEMENT DE LAYER
                     */
-                   /* new TileLayer({
+                    /*new TileLayer({
                         source: new XYZ({
                             url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                         }),
@@ -121,7 +121,7 @@
                 }
                 else {
                     me.posRealTime.setGeometry(geometry);
-                    me.posRealTime.setGeometry(geometryPrecision);
+                    me.posRealTimePrecision.setGeometry(geometryPrecision);
                 }
 
 
@@ -136,6 +136,6 @@
 <style scoped>
  #map{
      width: 100%;
-     height: 800px;
+     height: 600px;
  }
 </style>
