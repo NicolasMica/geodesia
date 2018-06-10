@@ -1,5 +1,10 @@
 <template>
-    <div id="map"></div>
+    <div>
+        <div id="map"></div>
+        <div class="center-align p-8">
+            <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></a>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -13,12 +18,13 @@
     import Feature from 'ol/feature';
     import Point from 'ol/geom/point';
     import Style from 'ol/style/style';
+    import StyleIcons from 'ol/style/icon';
     import Circle from 'ol/style/circle';
     import Fill from 'ol/style/fill';
     import Stroke from 'ol/style/stroke';
     import proj from 'ol/proj';
     import GeomCircle from 'ol/geom/circle';
-
+    import Pointer from 'ol/interaction/pointer';
     export default {
         name: "Releve",
         data () {
@@ -84,8 +90,8 @@
                     })
                 ],
                 view: new View({
-                    center: [0, 0],
-                    zoom: 2
+                    center:  proj.fromLonLat([13.41,52.52],'EPSG:3857'),
+                    zoom: 5
                 })
             });
             /*
@@ -117,6 +123,8 @@
                         })
                     }));
                     me.vectorSourcetrackerpos.addFeatures([me.posRealTime,me.posRealTimePrecision]);
+                    me.posRealTime.draggable = false;
+                    me.posRealTimePrecision.draggable = false;
                     me.map.getView().animate({center: coordTransform, zoom: 18});
                 }
                 else {
@@ -129,6 +137,24 @@
             }, function(error){
                 console.log('code: '+error.code+'\n'+'message: '+ error.message, 6000)
             }, { maximumAge: 3000, timeout: 8000, enableHighAccuracy: true });
+        },
+        methods : {
+            addMarker() {
+                let point = this.posRealTime.clone();
+                let iconStyle = new Style({
+                    image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png'
+                    }))
+                });
+                point.setStyle(iconStyle);
+                this.vectorSourcepoints.addFeature(point)
+
+                let interraction = new Pointer({handleMoveEvent : function(){
+                }})
+            }
         }
     }
 </script>
