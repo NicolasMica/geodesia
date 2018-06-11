@@ -4,7 +4,6 @@ import router from './router'
 import store from './store'
 import 'materialize-css/dist/js/materialize.min'
 import 'materialize-css/dist/css/materialize.min.css'
-import 'material-icons/css/material-icons.min.css'
 
 document.addEventListener('deviceready', () => {
 

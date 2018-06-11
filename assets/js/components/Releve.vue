@@ -1,9 +1,12 @@
 <template>
     <div>
+
         <div id="map"></div>
         <div class="center-align p-8">
             <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></a>
         </div>
+        TEST
+
     </div>
 </template>
 
@@ -25,6 +28,8 @@
     import proj from 'ol/proj';
     import GeomCircle from 'ol/geom/circle';
     import Pointer from 'ol/interaction/pointer';
+    import Interaction from 'ol/interaction';
+    import ol from 'ol';
     export default {
         name: "Releve",
         data () {
@@ -48,8 +53,122 @@
             this.vectorSourcepoints = new Vectorsource({
                 features: []
             });
+            /*
+            *
+            * INTERACTION DRAG
+            *
+            * /
+
+            /**
+             * @constructor
+             * @extends {ol.interaction.Pointer}
+             */
+            let interaction = {};
+            interaction.Drag = function() {
+
+                Pointer.call(this, {
+                    handleDownEvent: interaction.Drag.prototype.handleDownEvent,
+                    handleDragEvent: interaction.Drag.prototype.handleDragEvent,
+                    handleMoveEvent: interaction.Drag.prototype.handleMoveEvent,
+                    handleUpEvent: interaction.Drag.prototype.handleUpEvent
+                });
+
+                /**
+                 * @type {ol.Pixel}
+                 * @private
+                 */
+                this.coordinate_ = null;
+
+                /**
+                 * @type {string|undefined}
+                 * @private
+                 */
+                this.cursor_ = 'pointer';
+
+                /**
+                 * @type {ol.Feature}
+                 * @private
+                 */
+                this.feature_ = null;
+
+                /**
+                 * @type {string|undefined}
+                 * @private
+                 */
+                this.previousCursor_ = undefined;
+
+            };
+            ol.inherits(interaction.Drag, Pointer);
+            /**
+             * @param {ol.MapBrowserEvent} evt Map browser event.
+             * @return {boolean} `true` to start the drag sequence.
+             */
+            interaction.Drag.prototype.handleDownEvent = function(evt) {
+                var map = evt.map;
+
+                var feature = map.forEachFeatureAtPixel(evt.pixel,
+                    function(feature) {
+                        return (feature.draggable === true) ? feature : null
+                    });
+
+                if (feature) {
+                    this.coordinate_ = evt.coordinate;
+                    this.feature_ = feature;
+                }
+
+                return !!feature;
+            };
+
+
+            /**
+             * @param {ol.MapBrowserEvent} evt Map browser event.
+             */
+            interaction.Drag.prototype.handleDragEvent = function(evt) {
+                var deltaX = evt.coordinate[0] - this.coordinate_[0];
+                var deltaY = evt.coordinate[1] - this.coordinate_[1];
+
+                var geometry = this.feature_.getGeometry();
+                geometry.translate(deltaX, deltaY);
+
+                this.coordinate_[0] = evt.coordinate[0];
+                this.coordinate_[1] = evt.coordinate[1];
+            };
+
+
+            /**
+             * @param {ol.MapBrowserEvent} evt Event.
+             */
+            interaction.Drag.prototype.handleMoveEvent = function(evt) {
+                if (this.cursor_) {
+                    var map = evt.map;
+                    var feature = map.forEachFeatureAtPixel(evt.pixel,
+                        function(feature) {
+                            return feature;
+                        });
+                    var element = evt.map.getTargetElement();
+                    if (feature) {
+                        if (element.style.cursor != this.cursor_) {
+                            this.previousCursor_ = element.style.cursor;
+                            element.style.cursor = this.cursor_;
+                        }
+                    } else if (this.previousCursor_ !== undefined) {
+                        element.style.cursor = this.previousCursor_;
+                        this.previousCursor_ = undefined;
+                    }
+                }
+            };
+            /**
+             * @return {boolean} `false` to stop the drag sequence.
+             */
+            interaction.Drag.prototype.handleUpEvent = function() {
+                this.coordinate_ = null;
+                this.feature_ = null;
+                return false;
+            };
+
             this.map = new Map({
                 target: 'map',
+                interactions: new Interaction.defaults().extend([new interaction.Drag()]),
                 layers: [
                     /*
                     * LAYER FOND DE PLAN
@@ -150,10 +269,9 @@
                     }))
                 });
                 point.setStyle(iconStyle);
+                point.draggable = true;
                 this.vectorSourcepoints.addFeature(point)
 
-                let interraction = new Pointer({handleMoveEvent : function(){
-                }})
             }
         }
     }
