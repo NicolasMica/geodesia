@@ -5,8 +5,6 @@
         <div class="center-align p-8">
             <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></a>
         </div>
-        TEST
-
     </div>
 </template>
 
@@ -29,11 +27,13 @@
     import GeomCircle from 'ol/geom/circle';
     import Pointer from 'ol/interaction/pointer';
     import Interaction from 'ol/interaction';
+    import Polyline from 'ol/format/polyline'
     import ol from 'ol';
     export default {
         name: "Releve",
         data () {
             return {
+                url_osrm_route : '//router.project-osrm.org/route/v1/driving/',
                 map : null,
                 vectorSourcetrackerpos: null,
                 vectorSourcepoints : null,
@@ -41,6 +41,8 @@
                 precision : null,
                 posRealTime : null,
                 posRealTimePrecision : null,
+                tabPoints : [],
+                road : null,
             }
         },
         mounted () {
@@ -258,7 +260,27 @@
             }, { maximumAge: 3000, timeout: 8000, enableHighAccuracy: true });
         },
         methods : {
+            createRoute() {
+                let route = new Polyline({
+                    factor: 1e5
+                }).readGeometry(this.road, {
+                    dataProjection: 'EPSG:4326',
+                    featureProjection: 'EPSG:3857'
+                });
+                let feature = new ol.Feature({
+                    type: 'route',
+                    geometry: route
+                });
+                feature.setStyle(styles.route);
+                vectorSourcepoints.addFeature(feature);
+            },
+            createLineBetweenTwoPoint() {
+                let points;
+            },
             addMarker() {
+                /*
+                 * on clone le feature de la geoloc en changeant le style
+                 */
                 let point = this.posRealTime.clone();
                 let iconStyle = new Style({
                     image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
@@ -271,7 +293,35 @@
                 point.setStyle(iconStyle);
                 point.draggable = true;
                 this.vectorSourcepoints.addFeature(point)
+                /*
+                 * on ajoute le point au tableau de point
+                 */
+                this.tabPoints.push(point);
+                /*
+                 * Si on à plus de 1 point
+                 */
+                if (this.tabPoints.length > 1){
+                    /*
+                     * les deux derniers points
+                     */
+                    var point1 = this.tabPoints.length-2;
+                    var point2 = this.tabPoints.length-1;
+                    /*
+                     * appelle à osrm
+                     */
+                    fetch(this.url_osrm_route + point1 + ';' + point2).then(function(r) {
+                        return r.json();
+                    }).then(function(json) {
+                        if(json.code !== 'Ok') {
+                          this.createLineBetweenTwoPoint();
+                        }
+                        else {
+                            this.road = json.routes[0].geometry;
+                            this.createRoute();
+                        }
 
+                    });
+                }
             }
         }
     }
