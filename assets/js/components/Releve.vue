@@ -1,14 +1,17 @@
 <template>
     <div>
 
-        <div id="map"></div>
-        <div class="center-align p-8">
-            <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></a>
+        <div id="map" class="w-screen h-screen"></div>
+        <div class="absolute pin-x pin-b">
+            <div class="center-align p-8">
+                <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"> <i class="material-icons">add</i></a>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
+
     import Map from 'ol/map'
     import View from 'ol/view'
     import TileLayer from 'ol/layer/tile'
@@ -252,8 +255,32 @@
                     me.posRealTime.setGeometry(geometry);
                     me.posRealTimePrecision.setGeometry(geometryPrecision);
                 }
+                /*
+                 * On regarde à quelle distance on est du point le plus proche
+                 */
+                if (this.tabPoints.length > 1){
+                    /*
+                    * les deux derniers points
+                    */
+                    var point1 = coord;
+                    var point2 = this.tabPoints.length-1;
+                    point2 = point2.
+                    /*
+                    * appelle à osrm
+                    */
+                    fetch(this.url_osrm_route + point1 + ';' + point2).then(function(r) {
+                        return r.json();
+                    }).then(function(json) {
+                        if(json.code !== 'Ok') {
+                            this.createLineBetweenTwoPoint();
+                        }
+                        else {
+                            this.road = json.routes[0].geometry;
+                            this.createRoute();
+                        }
 
-
+                    });
+                }
 
             }, function(error){
                 console.log('code: '+error.code+'\n'+'message: '+ error.message, 6000)
@@ -274,9 +301,6 @@
                 feature.setStyle(styles.route);
                 vectorSourcepoints.addFeature(feature);
             },
-            createLineBetweenTwoPoint() {
-                let points;
-            },
             addMarker() {
                 /*
                  * on clone le feature de la geoloc en changeant le style
@@ -292,23 +316,24 @@
                 });
                 point.setStyle(iconStyle);
                 point.draggable = true;
-                this.vectorSourcepoints.addFeature(point)
+                this.vectorSourcepoints.addFeature(point);
+
                 /*
                  * on ajoute le point au tableau de point
                  */
                 this.tabPoints.push(point);
-                /*
+                /*/!*
                  * Si on à plus de 1 point
-                 */
+                 *!/
                 if (this.tabPoints.length > 1){
-                    /*
+                    /!*
                      * les deux derniers points
-                     */
+                     *!/
                     var point1 = this.tabPoints.length-2;
                     var point2 = this.tabPoints.length-1;
-                    /*
+                    /!*
                      * appelle à osrm
-                     */
+                     *!/
                     fetch(this.url_osrm_route + point1 + ';' + point2).then(function(r) {
                         return r.json();
                     }).then(function(json) {
@@ -321,15 +346,8 @@
                         }
 
                     });
-                }
+                }*/
             }
         }
     }
 </script>
-
-<style scoped>
- #map{
-     width: 100%;
-     height: 600px;
- }
-</style>
