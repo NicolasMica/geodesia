@@ -2,6 +2,11 @@
     <div>
 
         <div id="map" class="w-screen h-screen"></div>
+        <div class="absolute pin-x pin-t">
+            <div class="center-align p-4">
+                <span class="new badge blue" data-badge-caption="mètre du point le plus proche">{{distanceToNearestPoint}}</span>
+            </div>
+        </div>
         <div class="absolute pin-x pin-b">
             <div class="center-align p-8">
                 <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"> <i class="material-icons">add</i></a>
@@ -46,6 +51,7 @@
                 posRealTimePrecision : null,
                 tabPoints : [],
                 road : null,
+                distanceToNearestPoint : 0,
             }
         },
         mounted () {
@@ -258,25 +264,25 @@
                 /*
                  * On regarde à quelle distance on est du point le plus proche
                  */
-                if (this.tabPoints.length > 1){
+                if (me.tabPoints.length > 0){
                     /*
                     * les deux derniers points
                     */
                     var point1 = coord;
-                    var point2 = this.tabPoints.length-1;
-                    point2 = point2.
+                    var point2 = me.tabPoints[me.tabPoints.length-1];
+                    point2 = point2.getGeometry().transform('EPSG:3857','EPSG:4326').getCoordinates();
+                            console.log(point2);
                     /*
                     * appelle à osrm
                     */
-                    fetch(this.url_osrm_route + point1 + ';' + point2).then(function(r) {
+                    fetch(me.url_osrm_route + point1 + ';' + point2).then(function(r) {
                         return r.json();
                     }).then(function(json) {
                         if(json.code !== 'Ok') {
-                            this.createLineBetweenTwoPoint();
+                           console.log("error");
                         }
                         else {
-                            this.road = json.routes[0].geometry;
-                            this.createRoute();
+                            me.distanceToNearestPoint = json.routes[0].distance;
                         }
 
                     });
@@ -287,20 +293,6 @@
             }, { maximumAge: 3000, timeout: 8000, enableHighAccuracy: true });
         },
         methods : {
-            createRoute() {
-                let route = new Polyline({
-                    factor: 1e5
-                }).readGeometry(this.road, {
-                    dataProjection: 'EPSG:4326',
-                    featureProjection: 'EPSG:3857'
-                });
-                let feature = new ol.Feature({
-                    type: 'route',
-                    geometry: route
-                });
-                feature.setStyle(styles.route);
-                vectorSourcepoints.addFeature(feature);
-            },
             addMarker() {
                 /*
                  * on clone le feature de la geoloc en changeant le style
