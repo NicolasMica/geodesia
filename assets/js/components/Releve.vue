@@ -263,18 +263,19 @@
                 }
                 /*
                  * On regarde à quelle distance on est du point le plus proche
+                 * ABANDONNER MAIS ON GARDE EN CAS
                  */
-                if (me.tabPoints.length > 0){
-                    /*
+                /*      if (me.tabPoints.length > 0){
+                    /!*
                     * les deux derniers points
-                    */
+                    *!/
                     var point1 = coord;
                     var point2 = me.tabPoints[me.tabPoints.length-1];
                     point2 = point2.getGeometry().transform('EPSG:3857','EPSG:4326').getCoordinates();
                             console.log(point2);
-                    /*
+                    /!*
                     * appelle à osrm
-                    */
+                    *!/
                     fetch(me.url_osrm_route + point1 + ';' + point2).then(function(r) {
                         return r.json();
                     }).then(function(json) {
@@ -286,7 +287,7 @@
                         }
 
                     });
-                }
+                }*/
 
             }, function(error){
                 console.log('code: '+error.code+'\n'+'message: '+ error.message, 6000)
@@ -314,31 +315,21 @@
                  * on ajoute le point au tableau de point
                  */
                 this.tabPoints.push(point);
-                /*/!*
-                 * Si on à plus de 1 point
-                 *!/
-                if (this.tabPoints.length > 1){
-                    /!*
-                     * les deux derniers points
-                     *!/
-                    var point1 = this.tabPoints.length-2;
-                    var point2 = this.tabPoints.length-1;
-                    /!*
-                     * appelle à osrm
-                     *!/
-                    fetch(this.url_osrm_route + point1 + ';' + point2).then(function(r) {
-                        return r.json();
-                    }).then(function(json) {
-                        if(json.code !== 'Ok') {
-                          this.createLineBetweenTwoPoint();
-                        }
-                        else {
-                            this.road = json.routes[0].geometry;
-                            this.createRoute();
-                        }
 
-                    });
-                }*/
+                /*
+                 * TODO GET ROAD
+                 */
+
+
+
+                /*
+                 * TODO DRAW ROAD
+                 */
+
+
+                /*
+                 * TODO DRAW POINT
+                 */
             }
         }
     }
