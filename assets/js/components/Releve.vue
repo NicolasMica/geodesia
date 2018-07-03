@@ -36,6 +36,7 @@
     import Interaction from 'ol/interaction';
     import Polyline from 'ol/format/polyline'
     import ol from 'ol';
+    import overpass from 'query-overpass';
     export default {
         name: "Releve",
         data () {
@@ -312,6 +313,31 @@
                  * on ajoute le point au tableau de point
                  */
                 this.tabPoints.push(point);
+            },
+            getNearestRoad(lon,lat){
+                let maxDist = 10; // maximum distance from the point in meters
+                let query = '[out:json];' +
+                            'way' +
+                            '(around:${maxDist},${lat},${lon})' +
+                            '["highway"];' +
+                            '(' +
+                            '._; ' +
+                            '>;' +
+                            ');' +
+                            'out;';
+                return new Promise((resolve, reject) => {
+                    overpass(query, (error, roads) => {
+                        if (error) {
+                            return reject(error);
+                        } else if (roads.features.length < 1) {
+                            return reject({statusCode: 404, message: "No roads found"});
+                        } else {
+                            // we are interested in a single nearest road,
+                            // but an array of roads also can be returned
+                            return resolve(roads.features[0]);
+                        }
+                    });
+                });
             }
         }
     }
