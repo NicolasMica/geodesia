@@ -1,6 +1,10 @@
 <template>
     <div>
-
+        <div class="absolute pin-x pin-t z-10 h-auto w-auto">
+            <div class="center-align p-4">
+                <span class="new badge" data-badge-caption="mètres du point le plus proche">{{distanceToNearest}}</span>
+            </div>
+        </div>
         <div id="map" class="w-screen h-screen"></div>
         <div class="absolute pin-x pin-b">
             <div class="center-align p-8">
@@ -36,7 +40,7 @@
         name: "Releve",
         data () {
             return {
-                url_osrm_route : '//router.project-osrm.org/route/v1/driving/',
+                url_osrm_route : 'http://router.project-osrm.org/route/v1/driving/',
                 map : null,
                 vectorSourcetrackerpos: null,
                 vectorSourcepoints : null,
@@ -46,6 +50,7 @@
                 posRealTimePrecision : null,
                 tabPoints : [],
                 road : null,
+                distanceToNearest : 0
             }
         },
         mounted () {
@@ -256,27 +261,26 @@
                     me.posRealTimePrecision.setGeometry(geometryPrecision);
                 }
                 /*
-                 * On regarde à quelle distance on est du point le plus proche
+                 * On regarde à quelle distance on est du dernier point pour l'instant
                  */
-                if (this.tabPoints.length > 1){
+                if (me.tabPoints.length > 0){
                     /*
                     * les deux derniers points
                     */
-                    var point1 = coord;
-                    var point2 = this.tabPoints.length-1;
-                    point2 = point2.
+                    let point1 = coord;
+                    let point2 = me.tabPoints[ me.tabPoints.length-1];
+                    let coordpoint = point2.getGeometry().transform('EPSG:3857','EPSG:4326').getCoordinates();
                     /*
                     * appelle à osrm
                     */
-                    fetch(this.url_osrm_route + point1 + ';' + point2).then(function(r) {
+                    fetch(me.url_osrm_route + point1 + ';' + coordpoint).then(function(r) {
                         return r.json();
                     }).then(function(json) {
                         if(json.code !== 'Ok') {
-                            this.createLineBetweenTwoPoint();
+                            console.log("erreur");
                         }
                         else {
-                            this.road = json.routes[0].geometry;
-                            this.createRoute();
+                           me.distanceToNearest =json.routes[0].distance;
                         }
 
                     });
@@ -287,20 +291,6 @@
             }, { maximumAge: 3000, timeout: 8000, enableHighAccuracy: true });
         },
         methods : {
-            createRoute() {
-                let route = new Polyline({
-                    factor: 1e5
-                }).readGeometry(this.road, {
-                    dataProjection: 'EPSG:4326',
-                    featureProjection: 'EPSG:3857'
-                });
-                let feature = new ol.Feature({
-                    type: 'route',
-                    geometry: route
-                });
-                feature.setStyle(styles.route);
-                vectorSourcepoints.addFeature(feature);
-            },
             addMarker() {
                 /*
                  * on clone le feature de la geoloc en changeant le style
@@ -322,31 +312,6 @@
                  * on ajoute le point au tableau de point
                  */
                 this.tabPoints.push(point);
-                /*/!*
-                 * Si on à plus de 1 point
-                 *!/
-                if (this.tabPoints.length > 1){
-                    /!*
-                     * les deux derniers points
-                     *!/
-                    var point1 = this.tabPoints.length-2;
-                    var point2 = this.tabPoints.length-1;
-                    /!*
-                     * appelle à osrm
-                     *!/
-                    fetch(this.url_osrm_route + point1 + ';' + point2).then(function(r) {
-                        return r.json();
-                    }).then(function(json) {
-                        if(json.code !== 'Ok') {
-                          this.createLineBetweenTwoPoint();
-                        }
-                        else {
-                            this.road = json.routes[0].geometry;
-                            this.createRoute();
-                        }
-
-                    });
-                }*/
             }
         }
     }

@@ -8,6 +8,7 @@ import 'materialize-css/dist/js/materialize.min'
 import 'materialize-css/dist/css/materialize.min.css'
 require('ol/ol.css');
 require('material-icons/iconfont/material-icons.css');
+
 document.addEventListener('deviceready', () => {
 
     window.events = new Vue
