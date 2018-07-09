@@ -330,7 +330,7 @@
 
 
                         let temp = osmtogeojson(jsonfeature);
-                        console.log(temp);
+
                         let features = format.readFeatures(temp);
                         let street = features[0];
 
@@ -340,8 +340,8 @@
                         // show a marker every 200 meters
                         let distance = 0.2;
 
-                        // get the line length in kilometers
-                        let length = turf.lineDistance(turfLine, 'kilometers');
+                        // get the line length in kilorm meters
+                        let length = turf.len(turfLine, 'kilometers');
                         for (let i = 1; i <= length / distance; i++) {
                             let turfPoint = turf.along(turfLine, i * distance, 'kilometers');
 
