@@ -1,10 +1,5 @@
 <template>
     <div>
-        <div class="absolute pin-x pin-t z-10 h-auto w-auto">
-            <div class="center-align p-4">
-                <span class="new badge" data-badge-caption="mètres du point le plus proche">{{distanceToNearest}}</span>
-            </div>
-        </div>
         <div id="map" class="w-screen h-screen"></div>
         <div class="absolute pin-x pin-b">
             <div class="center-align p-8">
@@ -13,13 +8,11 @@
         </div>
     </div>
 </template>
-
 <script>
 
     import Map from 'ol/map'
     import View from 'ol/view'
     import TileLayer from 'ol/layer/tile'
-    import XYZ from 'ol/source/xyz'
     import Vectorlayer from 'ol/layer/vector';
     import TileImage from 'ol/source/tileimage';
     import Vectorsource from 'ol/source/vector';
@@ -31,17 +24,16 @@
     import Fill from 'ol/style/fill';
     import Stroke from 'ol/style/stroke';
     import proj from 'ol/proj';
-    import GeomCircle from 'ol/geom/circle';
     import Pointer from 'ol/interaction/pointer';
     import Interaction from 'ol/interaction';
-    import Polyline from 'ol/format/polyline'
+    import GeomCircle from 'ol/geom/circle';
     import ol from 'ol';
-    import overpass from 'query-overpass';
+    import GeoJSON from 'ol/format/GeoJSON.js';
+
     export default {
         name: "Releve",
         data () {
             return {
-                url_osrm_route : 'http://router.project-osrm.org/route/v1/driving/',
                 map : null,
                 vectorSourcetrackerpos: null,
                 vectorSourcepoints : null,
@@ -49,12 +41,12 @@
                 precision : null,
                 posRealTime : null,
                 posRealTimePrecision : null,
-                tabPoints : [],
+                markerpoint : null,
                 road : null,
-                distanceToNearest : 0
             }
         },
         mounted () {
+
             /*
              * DEFINE VECTOR SOURCE (ON AJOUTE LES FEATURES AU VECTOR SOURCE)
              */
@@ -143,6 +135,16 @@
 
                 this.coordinate_[0] = evt.coordinate[0];
                 this.coordinate_[1] = evt.coordinate[1];
+
+                /*
+              * on transform les coordonées dans en 4326
+               */
+                let coordtmp = evt.coordinate;
+                let coordpoint = proj.transform(coordtmp, 'EPSG:3857', 'EPSG:4326');
+                /*
+                 * on envoi les coordonnée à l'api osm
+                 */
+                //me.getNearestRoad(coordpoint[0], coordpoint[1]);
             };
 
 
@@ -224,6 +226,25 @@
                     zoom: 5
                 })
             });
+
+
+            /*
+             * ON declare le point du marker avec la geometry vide
+             */
+            this.markerpoint = new Feature({geometry: null});
+
+            let iconStyle = new Style({
+                image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
+                    anchor: [0.5, 46],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'pixels',
+                    src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png'
+                }))
+            });
+            this.markerpoint.setStyle(iconStyle);
+            this.markerpoint.draggable = true;
+            this.vectorSourcepoints.addFeature(this.markerpoint);
+
             /*
              * MAINTENANT ON MET EN PLACE LE TRACKER
              */
@@ -261,31 +282,6 @@
                     me.posRealTime.setGeometry(geometry);
                     me.posRealTimePrecision.setGeometry(geometryPrecision);
                 }
-                /*
-                 * On regarde à quelle distance on est du dernier point pour l'instant
-                 */
-                if (me.tabPoints.length > 0){
-                    /*
-                    * les deux derniers points
-                    */
-                    let point1 = coord;
-                    let point2 = me.tabPoints[ me.tabPoints.length-1];
-                    let coordpoint = point2.getGeometry().transform('EPSG:3857','EPSG:4326').getCoordinates();
-                    /*
-                    * appelle à osrm
-                    */
-                    fetch(me.url_osrm_route + point1 + ';' + coordpoint).then(function(r) {
-                        return r.json();
-                    }).then(function(json) {
-                        if(json.code !== 'Ok') {
-                            console.log("erreur");
-                        }
-                        else {
-                           me.distanceToNearest =json.routes[0].distance;
-                        }
-
-                    });
-                }
 
             }, function(error){
                 console.log('code: '+error.code+'\n'+'message: '+ error.message, 6000)
@@ -294,50 +290,70 @@
         methods : {
             addMarker() {
                 /*
-                 * on clone le feature de la geoloc en changeant le style
+                 * on recupere les coordonnée du point de la position en temps reel
                  */
-                let point = this.posRealTime.clone();
-                let iconStyle = new Style({
-                    image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
-                        anchor: [0.5, 46],
-                        anchorXUnits: 'fraction',
-                        anchorYUnits: 'pixels',
-                        src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png'
-                    }))
-                });
-                point.setStyle(iconStyle);
-                point.draggable = true;
-                this.vectorSourcepoints.addFeature(point);
-
+                let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates();
                 /*
-                 * on ajoute le point au tableau de point
+                 * on cree un point et un vecteur avec ces coordonnée
                  */
-                this.tabPoints.push(point);
+                let geometry = new Point(coordPosRealTime);
+                this.markerpoint.setGeometry(geometry);
+                /*
+                * on transform les coordonées dans en 4326
+                 */
+                let coordpoint = proj.transform(coordPosRealTime, 'EPSG:3857', 'EPSG:4326');
+                /*
+                 * on envoi les coordonnée à l'api osm
+                 */
+                this.getNearestRoad(coordpoint[0], coordpoint[1]);
+
             },
             getNearestRoad(lon,lat){
+                let me = this;
                 let maxDist = 10; // maximum distance from the point in meters
-                let query = '[out:json];' +
-                            'way' +
-                            '(around:${maxDist},${lat},${lon})' +
+                let query = '[out:json]; way' +
+                            '(around:'+maxDist+','+lat+','+lon+')' +
                             '["highway"];' +
-                            '(' +
-                            '._; ' +
-                            '>;' +
-                            ');' +
-                            'out;';
-                return new Promise((resolve, reject) => {
-                    overpass(query, (error, roads) => {
-                        if (error) {
-                            return reject(error);
-                        } else if (roads.features.length < 1) {
-                            return reject({statusCode: 404, message: "No roads found"});
-                        } else {
-                            // we are interested in a single nearest road,
-                            // but an array of roads also can be returned
-                            return resolve(roads.features[0]);
+                            'out geom;';
+                fetch('https://overpass-api.de/api/interpreter', {
+                    method: "POST",
+                    body: query
+                }).then(function(response) { return response.json(); })
+                    .then(function(json) {
+                        // use the json
+                        var osmtogeojson = require('osmtogeojson');
+                        var turf = require('@turf/turf');
+                        let format = new GeoJSON({featureProjection:"EPSG:3857"});
+                        let jsonfeature = json;
+
+                        console.log(jsonfeature);
+
+
+                        let temp = osmtogeojson(jsonfeature);
+                        console.log(temp);
+                        let features = format.readFeatures(temp);
+                        let street = features[0];
+
+                        // convert to a turf.js feature
+                        let turfLine = format.writeFeatureObject(street);
+
+                        // show a marker every 200 meters
+                        let distance = 0.2;
+
+                        // get the line length in kilometers
+                        let length = turf.lineDistance(turfLine, 'kilometers');
+                        for (let i = 1; i <= length / distance; i++) {
+                            let turfPoint = turf.along(turfLine, i * distance, 'kilometers');
+
+                            // convert the generated point to a OpenLayers feature
+                            let marker = format.readFeature(turfPoint);
+                            marker.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+                            me.vectorSourcepoints.addFeature(marker);
                         }
-                    });
-                });
+
+                        street.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+                        me.vectorSourcepoints.addFeature(street);
+                })
             }
         }
     }
