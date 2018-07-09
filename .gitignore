@@ -2,6 +2,7 @@
 node_modules/
 www/js/app.js
 www/css/app.css
+www/fonts/*
 www/mix-manifest.json
 platforms/browser/www/css/
 platforms/browser/www/js/

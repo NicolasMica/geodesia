@@ -1,12 +1,6 @@
 <template>
     <div>
-
         <div id="map" class="w-screen h-screen"></div>
-        <div class="absolute pin-x pin-t">
-            <div class="center-align p-4">
-                <span class="new badge blue" data-badge-caption="mètre du point le plus proche">{{distanceToNearestPoint}}</span>
-            </div>
-        </div>
         <div class="absolute pin-x pin-b">
             <div class="center-align p-8">
                 <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"> <i class="material-icons">add</i></a>
@@ -14,13 +8,11 @@
         </div>
     </div>
 </template>
-
 <script>
 
     import Map from 'ol/map'
     import View from 'ol/view'
     import TileLayer from 'ol/layer/tile'
-    import XYZ from 'ol/source/xyz'
     import Vectorlayer from 'ol/layer/vector';
     import TileImage from 'ol/source/tileimage';
     import Vectorsource from 'ol/source/vector';
@@ -32,16 +24,16 @@
     import Fill from 'ol/style/fill';
     import Stroke from 'ol/style/stroke';
     import proj from 'ol/proj';
-    import GeomCircle from 'ol/geom/circle';
     import Pointer from 'ol/interaction/pointer';
     import Interaction from 'ol/interaction';
-    import Polyline from 'ol/format/polyline'
+    import GeomCircle from 'ol/geom/circle';
     import ol from 'ol';
+    import GeoJSON from 'ol/format/GeoJSON.js';
+
     export default {
         name: "Releve",
         data () {
             return {
-                url_osrm_route : '//router.project-osrm.org/route/v1/driving/',
                 map : null,
                 vectorSourcetrackerpos: null,
                 vectorSourcepoints : null,
@@ -49,12 +41,12 @@
                 precision : null,
                 posRealTime : null,
                 posRealTimePrecision : null,
-                tabPoints : [],
+                markerpoint : null,
                 road : null,
-                distanceToNearestPoint : 0,
             }
         },
         mounted () {
+
             /*
              * DEFINE VECTOR SOURCE (ON AJOUTE LES FEATURES AU VECTOR SOURCE)
              */
@@ -143,6 +135,16 @@
 
                 this.coordinate_[0] = evt.coordinate[0];
                 this.coordinate_[1] = evt.coordinate[1];
+
+                /*
+              * on transform les coordonées dans en 4326
+               */
+                let coordtmp = evt.coordinate;
+                let coordpoint = proj.transform(coordtmp, 'EPSG:3857', 'EPSG:4326');
+                /*
+                 * on envoi les coordonnée à l'api osm
+                 */
+                //me.getNearestRoad(coordpoint[0], coordpoint[1]);
             };
 
 
@@ -224,6 +226,25 @@
                     zoom: 5
                 })
             });
+
+
+            /*
+             * ON declare le point du marker avec la geometry vide
+             */
+            this.markerpoint = new Feature({geometry: null});
+
+            let iconStyle = new Style({
+                image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
+                    anchor: [0.5, 46],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'pixels',
+                    src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png'
+                }))
+            });
+            this.markerpoint.setStyle(iconStyle);
+            this.markerpoint.draggable = true;
+            this.vectorSourcepoints.addFeature(this.markerpoint);
+
             /*
              * MAINTENANT ON MET EN PLACE LE TRACKER
              */
@@ -261,33 +282,6 @@
                     me.posRealTime.setGeometry(geometry);
                     me.posRealTimePrecision.setGeometry(geometryPrecision);
                 }
-                /*
-                 * On regarde à quelle distance on est du point le plus proche
-                 * ABANDONNER MAIS ON GARDE EN CAS
-                 */
-                /*      if (me.tabPoints.length > 0){
-                    /!*
-                    * les deux derniers points
-                    *!/
-                    var point1 = coord;
-                    var point2 = me.tabPoints[me.tabPoints.length-1];
-                    point2 = point2.getGeometry().transform('EPSG:3857','EPSG:4326').getCoordinates();
-                            console.log(point2);
-                    /!*
-                    * appelle à osrm
-                    *!/
-                    fetch(me.url_osrm_route + point1 + ';' + point2).then(function(r) {
-                        return r.json();
-                    }).then(function(json) {
-                        if(json.code !== 'Ok') {
-                           console.log("error");
-                        }
-                        else {
-                            me.distanceToNearestPoint = json.routes[0].distance;
-                        }
-
-                    });
-                }*/
 
             }, function(error){
                 console.log('code: '+error.code+'\n'+'message: '+ error.message, 6000)
@@ -296,40 +290,70 @@
         methods : {
             addMarker() {
                 /*
-                 * on clone le feature de la geoloc en changeant le style
+                 * on recupere les coordonnée du point de la position en temps reel
                  */
-                let point = this.posRealTime.clone();
-                let iconStyle = new Style({
-                    image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
-                        anchor: [0.5, 46],
-                        anchorXUnits: 'fraction',
-                        anchorYUnits: 'pixels',
-                        src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png'
-                    }))
-                });
-                point.setStyle(iconStyle);
-                point.draggable = true;
-                this.vectorSourcepoints.addFeature(point);
-
+                let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates();
                 /*
-                 * on ajoute le point au tableau de point
+                 * on cree un point et un vecteur avec ces coordonnée
                  */
-                this.tabPoints.push(point);
-
+                let geometry = new Point(coordPosRealTime);
+                this.markerpoint.setGeometry(geometry);
                 /*
-                 * TODO GET ROAD
+                * on transform les coordonées dans en 4326
                  */
-
-
-
+                let coordpoint = proj.transform(coordPosRealTime, 'EPSG:3857', 'EPSG:4326');
                 /*
-                 * TODO DRAW ROAD
+                 * on envoi les coordonnée à l'api osm
                  */
+                this.getNearestRoad(coordpoint[0], coordpoint[1]);
+
+            },
+            getNearestRoad(lon,lat){
+                let me = this;
+                let maxDist = 10; // maximum distance from the point in meters
+                let query = '[out:json]; way' +
+                            '(around:'+maxDist+','+lat+','+lon+')' +
+                            '["highway"];' +
+                            'out geom;';
+                fetch('https://overpass-api.de/api/interpreter', {
+                    method: "POST",
+                    body: query
+                }).then(function(response) { return response.json(); })
+                    .then(function(json) {
+                        // use the json
+                        var osmtogeojson = require('osmtogeojson');
+                        var turf = require('@turf/turf');
+                        let format = new GeoJSON({featureProjection:"EPSG:3857"});
+                        let jsonfeature = json;
+
+                        console.log(jsonfeature);
 
 
-                /*
-                 * TODO DRAW POINT
-                 */
+                        let temp = osmtogeojson(jsonfeature);
+                        console.log(temp);
+                        let features = format.readFeatures(temp);
+                        let street = features[0];
+
+                        // convert to a turf.js feature
+                        let turfLine = format.writeFeatureObject(street);
+
+                        // show a marker every 200 meters
+                        let distance = 0.2;
+
+                        // get the line length in kilometers
+                        let length = turf.lineDistance(turfLine, 'kilometers');
+                        for (let i = 1; i <= length / distance; i++) {
+                            let turfPoint = turf.along(turfLine, i * distance, 'kilometers');
+
+                            // convert the generated point to a OpenLayers feature
+                            let marker = format.readFeature(turfPoint);
+                            marker.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+                            me.vectorSourcepoints.addFeature(marker);
+                        }
+
+                        street.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+                        me.vectorSourcepoints.addFeature(street);
+                })
             }
         }
     }
