@@ -1,0 +1,31 @@
+.button {
+    @apply flex items-center px-6 py-3 uppercase font-bold;
+
+    &:disabled {
+        @apply cursor-not-allowed;
+    }
+
+    &.is-red {
+        @apply text-white bg-red;
+
+        &:disabled {
+            @apply bg-red-light;
+        }
+
+        &:hover:not([disabled]) {
+            @apply bg-red-dark;
+        }
+    }
+
+    &.is-blue {
+        @apply text-white bg-blue;
+
+        &:disabled {
+            @apply bg-blue-light;
+        }
+
+        &:hover:not([disabled]) {
+            @apply bg-blue-dark;
+        }
+    }
+}
