@@ -324,7 +324,6 @@
                             let format = new GeoJSON({featureProjection:"EPSG:3857"});
                             let features = format.readFeatures(osmtogeojson(responsejson));
                             //TODO boucle sur les features et separer les routes des points
-                            console.log(features);
                             //tabroad correspond au tableau de routes que l'on traite
                             let tabroad = [];
                             //tabpk correspond au pk trouvés
@@ -333,10 +332,10 @@
                                 if(typeof feature.get("ref") !== 'undefined' && feature.get("ref") ===  me.roadactuelle && typeof feature.get("building") === 'undefined') {
                                     feature.setStyle(styleroad);
                                     tabroad.push(feature);
-                                };
+                                }if (typeof feature.get("highway") !== 'undefined' && feature.get("highway") === "milestone"){
+                                    console.log(feature);
+                                }
                             });
-                            console.log(tabroad);
-                            console.log(tabpk);
                            // let entireRoad = features[0];
                             //entireRoad.getGeometry().transform('EPSG:4326', 'EPSG:3857');
                             //  entireRoad.setStyle()
