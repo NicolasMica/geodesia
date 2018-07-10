@@ -29,7 +29,9 @@
     import GeomCircle from 'ol/geom/circle';
     import ol from 'ol';
     import GeoJSON from 'ol/format/GeoJSON.js';
-
+    import osmtogeojson from 'osmtogeojson';
+    import turf from '@turf/turf';
+    import XYZ from 'ol/source/XYZ';
     export default {
         name: "Releve",
         data () {
@@ -43,6 +45,7 @@
                 posRealTimePrecision : null,
                 markerpoint : null,
                 road : null,
+                roadactuelle : null,
             }
         },
         mounted () {
@@ -76,28 +79,10 @@
                     handleUpEvent: interaction.Drag.prototype.handleUpEvent
                 });
 
-                /**
-                 * @type {ol.Pixel}
-                 * @private
-                 */
+
                 this.coordinate_ = null;
-
-                /**
-                 * @type {string|undefined}
-                 * @private
-                 */
                 this.cursor_ = 'pointer';
-
-                /**
-                 * @type {ol.Feature}
-                 * @private
-                 */
                 this.feature_ = null;
-
-                /**
-                 * @type {string|undefined}
-                 * @private
-                 */
                 this.previousCursor_ = undefined;
 
             };
@@ -121,8 +106,6 @@
 
                 return !!feature;
             };
-
-
             /**
              * @param {ol.MapBrowserEvent} evt Map browser event.
              */
@@ -146,8 +129,6 @@
                  */
                 //me.getNearestRoad(coordpoint[0], coordpoint[1]);
             };
-
-
             /**
              * @param {ol.MapBrowserEvent} evt Event.
              */
@@ -187,34 +168,24 @@
                     * LAYER FOND DE PLAN
                     * TODO CHANGEMENT DE LAYER
                     */
-                    /*new TileLayer({
+                    new TileLayer({
                         source: new XYZ({
                             url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                         }),
-                    }),*/
-                    new TileLayer({
+                    }),
+                    /*new TileLayer({
                         title: "Google Satellite & Roads",
                         source: new TileImage({
                             url: 'http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
                         })
-                    }),
+                    }),*/
                     /*
                      * LAYER POUR DRAW
                      */
                     new Vectorlayer({
                         title : "vectorSourcetrackerpos",
                         source: this.vectorSourcetrackerpos,
-                        style: [
-                            new Style({
-                                stroke: new Stroke({
-                                    color: 'blue',
-                                    width: 3
-                                }),
-                                fill: new Fill({
-                                    color: 'rgba(0, 0, 255, 0.1)'
-                                })
-                            })
-                        ]
+                        zIndex: 99999
                     }),
                     new Vectorlayer({
                         title : "vectorSourcepoints",
@@ -250,26 +221,41 @@
              */
             let me = this;
             this.watchPos = navigator.geolocation.watchPosition(function(position){
-                /*
-                 * SI LE FEATURE N'EXISTE PAS ON LE CREE SINON ON LE MET JUSTE A JOUR
-                 */
+
                 let coord = [parseFloat(position.coords.longitude), parseFloat(position.coords.latitude)];
+                /*
+                * et on envoi les coordonnée à l'api osm pour recuperer la route et laposition par rapport au pk avant et pk d'apres
+                */
+                me.getNearestRoad(coord[0], coord[1]);
+
                 let coordTransform = proj.fromLonLat(coord,'EPSG:3857');
                 me.precision  = position.coords.accuracy;
                 let geometry = new Point(coordTransform);
                 let geometryPrecision = new GeomCircle(coordTransform,  me.precision);
+                 /*
+                  * SI LE FEATURE N'EXISTE PAS ON LE CREE SINON ON LE MET JUSTE A JOUR
+                  */
                 if(me.posRealTime === null && me.posRealTimePrecision === null){
                     me.posRealTime = new Feature({geometry: geometry});
                     me.posRealTimePrecision = new Feature({geometry: geometryPrecision});
+                    me.posRealTimePrecision.setStyle(new Style({
+                        stroke: new Stroke({
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            width: 3
+                        }),
+                        fill: new Fill({
+                            color: 'rgba(255, 255, 255, 0.3)'
+                        })
+                    }));
                     me.posRealTime.setStyle(new Style({
                         image: new Circle({
-                            radius: 6,
+                            radius: 12,
                             fill: new Fill({
-                                color: '#3399CC'
+                                color: '#C92B20'
                             }),
                             stroke: new Stroke({
                                 color: '#fff',
-                                width: 2
+                                width: 1
                             })
                         })
                     }));
@@ -289,6 +275,7 @@
         },
         methods : {
             addMarker() {
+                // TODO TYPE DE MARKER : debut de chantier / fin de chantier / probleme avec com et photo
                 /*
                  * on recupere les coordonnée du point de la position en temps reel
                  */
@@ -302,10 +289,7 @@
                 * on transform les coordonées dans en 4326
                  */
                 let coordpoint = proj.transform(coordPosRealTime, 'EPSG:3857', 'EPSG:4326');
-                /*
-                 * on envoi les coordonnée à l'api osm
-                 */
-                this.getNearestRoad(coordpoint[0], coordpoint[1]);
+
 
             },
             getNearestRoad(lon,lat){
@@ -318,41 +302,71 @@
                 fetch('https://overpass-api.de/api/interpreter', {
                     method: "POST",
                     body: query
-                }).then(function(response) { return response.json(); })
-                    .then(function(json) {
-                        // use the json
-                        var osmtogeojson = require('osmtogeojson');
-                        var turf = require('@turf/turf');
-                        let format = new GeoJSON({featureProjection:"EPSG:3857"});
-                        let jsonfeature = json;
+                }).then(function(response) {
+                    return response.json();
+                }).then(function(json) {
+                    if(me.roadactuelle === null || json.elements[0].tags.ref !==  me.roadactuelle ){
+                        me.roadactuelle = json.elements[0].tags.ref;
+                        let queryroad = "[out:json];(way[\"ref\"=\""+ me.roadactuelle+"\"]; >;);out geom;";
+                        fetch('https://overpass-api.de/api/interpreter', {
+                            method: "POST",
+                            body: queryroad
+                        }).then(function (response) {
+                            return response.json();
+                        }).then(function (responsejson) {
+                            //Style de la route
+                            let styleroad = new Style({
+                                stroke: new Stroke({
+                                    color: '#293F78',
+                                    width: 10
+                                })
+                            });
+                            let format = new GeoJSON({featureProjection:"EPSG:3857"});
+                            let features = format.readFeatures(osmtogeojson(responsejson));
+                            //TODO boucle sur les features et separer les routes des points
+                            console.log(features);
+                            //tabroad correspond au tableau de routes que l'on traite
+                            let tabroad = [];
+                            //tabpk correspond au pk trouvés
+                            let tabpk = [];
+                            features.forEach(function(feature){
+                                if(typeof feature.get("ref") !== 'undefined' && feature.get("ref") ===  me.roadactuelle && typeof feature.get("building") === 'undefined') {
+                                    feature.setStyle(styleroad);
+                                    tabroad.push(feature);
+                                };
+                            });
+                            console.log(tabroad);
+                            console.log(tabpk);
+                           // let entireRoad = features[0];
+                            //entireRoad.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+                            //  entireRoad.setStyle()
+                            me.vectorSourcepoints.addFeatures(tabroad);
+                        });
 
-                        console.log(jsonfeature);
+                    }
 
+                  /*
 
-                        let temp = osmtogeojson(jsonfeature);
+                    TMP POUR USE TURF
 
-                        let features = format.readFeatures(temp);
-                        let street = features[0];
+                    // convert to a turf.js feature
+                    let turfLine = format.writeFeatureObject(street);
 
-                        // convert to a turf.js feature
-                        let turfLine = format.writeFeatureObject(street);
+                    // show a marker every 200 meters
+                    let distance = 0.2;
 
-                        // show a marker every 200 meters
-                        let distance = 0.2;
+                    // get the line length in kilorm meters
+                    let length = turf.len(turfLine, 'kilometers');
+                    for (let i = 1; i <= length / distance; i++) {
+                        let turfPoint = turf.along(turfLine, i * distance, 'kilometers');
 
-                        // get the line length in kilorm meters
-                        let length = turf.len(turfLine, 'kilometers');
-                        for (let i = 1; i <= length / distance; i++) {
-                            let turfPoint = turf.along(turfLine, i * distance, 'kilometers');
+                        // convert the generated point to a OpenLayers feature
+                        let marker = format.readFeature(turfPoint);
+                        marker.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+                        me.vectorSourcepoints.addFeature(marker);
+                    }
+                    */
 
-                            // convert the generated point to a OpenLayers feature
-                            let marker = format.readFeature(turfPoint);
-                            marker.getGeometry().transform('EPSG:4326', 'EPSG:3857');
-                            me.vectorSourcepoints.addFeature(marker);
-                        }
-
-                        street.getGeometry().transform('EPSG:4326', 'EPSG:3857');
-                        me.vectorSourcepoints.addFeature(street);
                 })
             }
         }
