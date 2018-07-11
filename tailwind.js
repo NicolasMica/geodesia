@@ -443,6 +443,7 @@ module.exports = {
         'sm': '.125rem',
         default: '.25rem',
         'lg': '.5rem',
+        'xl': '1rem',
         'full': '9999px',
     },
 
@@ -747,7 +748,7 @@ module.exports = {
     */
 
     shadows: {
-        default: '0 2px 4px 0 rgba(0,0,0,0.10)',
+        default: '0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07)',
         'md': '0 4px 8px 0 rgba(0,0,0,0.12), 0 2px 4px 0 rgba(0,0,0,0.08)',
         'lg': '0 15px 30px 0 rgba(0,0,0,0.11), 0 5px 15px 0 rgba(0,0,0,0.08)',
         'inner': 'inset 0 2px 4px 0 rgba(0,0,0,0.06)',
@@ -862,12 +863,12 @@ module.exports = {
     modules: {
         appearance: ['responsive'],
         backgroundAttachment: ['responsive'],
-        backgroundColors: ['responsive', 'hover', 'focus'],
+        backgroundColors: ['responsive', 'hover', 'focus', 'group-hover'],
         backgroundPosition: ['responsive'],
         backgroundRepeat: ['responsive'],
         backgroundSize: ['responsive'],
         borderCollapse: [],
-        borderColors: ['responsive', 'hover', 'focus'],
+        borderColors: ['responsive', 'hover', 'focus', 'group-hover'],
         borderRadius: ['responsive'],
         borderStyle: ['responsive'],
         borderWidths: ['responsive'],
@@ -897,7 +898,7 @@ module.exports = {
         svgFill: [],
         svgStroke: [],
         textAlign: ['responsive'],
-        textColors: ['responsive', 'hover', 'focus'],
+        textColors: ['responsive', 'hover', 'focus', 'group-hover'],
         textSizes: ['responsive'],
         textStyle: ['responsive', 'hover', 'focus'],
         tracking: ['responsive'],
