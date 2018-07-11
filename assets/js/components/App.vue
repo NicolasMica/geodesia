@@ -1,5 +1,5 @@
 <template>
-    <div id="root" class="min-h-screen min-w-screen antialiased font-sans">
+    <div id="root" class="min-h-screen w-screen antialiased font-sans font-normal bg-grey-lightest">
         <router-view></router-view>
     </div>
 </template>
