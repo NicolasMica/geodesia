@@ -20,7 +20,17 @@
  */
 @tailwind components;
 
+* {
+    color: inherit;
+    text-decoration: none;
+}
+
 @import 'buttons';
+@import 'form';
+
+.card {
+    @apply flex flex-col rounded shadow bg-white border-b-4 border-blue;
+}
 
 /**
  * Here you would add any of your custom component classes; stuff that you'd

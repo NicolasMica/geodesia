@@ -1,8 +1,24 @@
 .button {
-    @apply flex items-center px-6 py-3 uppercase font-bold;
+    @apply flex items-center px-12 py-4 uppercase font-bold rounded-full shadow cursor-pointer;
+
+    &:focus {
+        @apply outline-none shadow-outline;
+    }
 
     &:disabled {
         @apply cursor-not-allowed;
+    }
+
+    &.is-green {
+        @apply text-white bg-green;
+
+        &:disabled {
+            @apply bg-green-lighter;
+        }
+
+        &:hover:not([disabled]) {
+            @apply bg-green-dark;
+        }
     }
 
     &.is-red {
@@ -21,7 +37,7 @@
         @apply text-white bg-blue;
 
         &:disabled {
-            @apply bg-blue-light;
+            @apply bg-blue-lighter;
         }
 
         &:hover:not([disabled]) {

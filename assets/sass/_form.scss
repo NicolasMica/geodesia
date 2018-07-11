@@ -1,0 +1,22 @@
+.label {
+    @apply block uppercase tracking-wide text-xs font-bold text-grey-darker;
+}
+
+.input {
+    @apply appearance-none block px-6 py-4 w-full rounded-full shadow bg-white;
+
+    &:focus {
+        @apply outline-none shadow-outline;
+    }
+}
+
+.has-error {
+
+    .label {
+        @apply text-red;
+    }
+
+    .input {
+        @apply border border-red;
+    }
+}
