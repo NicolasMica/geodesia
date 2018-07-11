@@ -2,7 +2,7 @@
 node_modules/
 www/js/app.js
 www/css/app.css
-www/fonts/*
+www/fonts/
 www/mix-manifest.json
 platforms/browser/www/css/
 platforms/browser/www/js/
@@ -11,5 +11,4 @@ platforms/android/app/src/main/assets/www/fonts/
 platforms/android/app/src/main/assets/www/img/
 platforms/android/app/src/main/libs/
 platforms/browser/www/img/
-www/fonts/
-www/img/
+**/*.DS_Store
