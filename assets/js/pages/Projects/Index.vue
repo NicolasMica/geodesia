@@ -11,12 +11,12 @@
                     </div>
                     <div class="flex items-center text-grey-dark mb-4">
                         <p class="label text-grey-dark">Projets</p>
-                        <button type="button" class="p-2 ml-auto transition-transform" :class="{ 'rotate-360': loading }" @click="fetch">
+                        <button type="button" class="p-2 ml-auto transition-transform focus:outline-none" :class="{ 'rotate-360': loading }" @click="fetch">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
                     <div class="mb-16">
-                        <div class="mb-8" v-for="project in projects" :key="project.id">
+                        <div class="mb-8" v-for="project in projects.all()" :key="project.id">
                             <router-link :to="{ name: 'projects.edit', params: { id: project.id } }">
                                 <div class="card p-4">
                                     <div class="flex items-center">
@@ -31,12 +31,12 @@
                         </div>
                     </div>
                     <div class="fixed pin-x pin-b flex justify-center pb-4">
-                        <button class="button is-blue">
+                        <router-link :to="{ name: 'projects.create' }" class="button is-blue">
                             <span class="mr-2">
                                 <i class="fas fa-plus"></i>
                             </span>
                             <span>Chantier</span>
-                        </button>
+                        </router-link>
                     </div>
                 </div>
             </div>
