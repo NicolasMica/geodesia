@@ -30,7 +30,7 @@ const store = new Vuex.Store({
          * @param projects - Project collection
          * @return {*}
          */
-        FETCH_PROJECTS: (state, projects)  => state.projects = projects,
+        FETCH_PROJECTS: (state, projects)  => state.projects = collect(projects),
 
         /**
          * Store a new project in the state
@@ -70,7 +70,7 @@ const store = new Vuex.Store({
                     })
                     .catch(error => {
                         console.error(error)
-                        reject(error)
+                        reject(error.response.data)
                     })
             })
         },
@@ -89,7 +89,7 @@ const store = new Vuex.Store({
                     })
                     .catch(error => {
                         console.error(error)
-                        reject(error)
+                        reject(error.response.data)
                     })
             })
         },
@@ -108,7 +108,7 @@ const store = new Vuex.Store({
                     })
                     .catch(error => {
                         console.error(error)
-                        reject(error)
+                        reject(error.response.data)
                     })
             })
         },
@@ -126,8 +126,8 @@ const store = new Vuex.Store({
                         resolve()
                     })
                     .catch(error => {
-                        console.error(error.message)
-                        reject(error.message)
+                        console.error(error)
+                        reject(error.response.data)
                     })
             })
         },
@@ -146,7 +146,7 @@ const store = new Vuex.Store({
                     })
                     .catch(error => {
                         console.error(error)
-                        reject(error)
+                        reject(error.response.data)
                     })
             })
         }
@@ -170,7 +170,7 @@ const store = new Vuex.Store({
             return state.projects.map(project => {
                 project.created_at = moment(project.created_at)
                 return project
-            })
+            }).sortByDesc('updated_at')
         }
     }
 })
