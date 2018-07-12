@@ -72,3 +72,11 @@
  * @import "utilities/background-patterns";
  * @import "utilities/skew-transforms";
  */
+
+.transition-transform {
+    transition: transform .3s;
+}
+
+.rotate-360 {
+    transform: rotate(360deg);
+}
