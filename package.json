@@ -36,7 +36,6 @@
     "tailwindcss": "^0.6.1"
   },
   "dependencies": {
-    "@turf/turf": "^5.1.6",
     "axios": "^0.18.0",
     "browser-sync": "^2.24.4",
     "collect.js": "^4.0.22",
@@ -48,6 +47,7 @@
     "moment": "^2.22.2",
     "ol": "^4.6.5",
     "osmtogeojson": "^3.0.0-beta.3",
+    "proj4": "^2.4.4",
     "vue": "^2.5.16",
     "vue-router": "^3.0.1",
     "vuex": "^3.0.1"
