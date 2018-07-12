@@ -12,10 +12,6 @@
     &.is-green {
         @apply text-white bg-green;
 
-        &:disabled {
-            @apply bg-green-lighter;
-        }
-
         &:hover:not([disabled]) {
             @apply bg-green-dark;
         }
@@ -24,10 +20,6 @@
     &.is-red {
         @apply text-white bg-red;
 
-        &:disabled {
-            @apply bg-red-light;
-        }
-
         &:hover:not([disabled]) {
             @apply bg-red-dark;
         }
@@ -35,10 +27,6 @@
 
     &.is-blue {
         @apply text-white bg-blue;
-
-        &:disabled {
-            @apply bg-blue-lighter;
-        }
 
         &:hover:not([disabled]) {
             @apply bg-blue-dark;
