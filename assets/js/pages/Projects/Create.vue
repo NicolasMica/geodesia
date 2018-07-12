@@ -2,14 +2,17 @@
     <div class="container mx-auto">
         <div class="flex justify-center">
             <div class="w-full sm:w-3/4 md:w-1/2">
-                <div class="flex flex-col px-4 md:px-8">
-                    <div class="flex items-center mb-4 text-grey-dark">
+                <div class="relative flex flex-col px-4 md:px-8 min-h-screen">
+                    <div class="flex items-center text-grey-dark" :class="{ 'mb-4': !hasData }">
                         <router-link :to="{ name: 'projects.index' }" class="p-4">
                             <i class="fas fa-arrow-left"></i>
                         </router-link>
                         <p class="ml-auto py-4 uppercase font-medium text-black">Création de chantier</p>
                     </div>
-                    <project-form></project-form>
+                    <project-form @submit="onSubmit" v-if="!hasData"></project-form>
+                    <div class="relative -mx-4 md:-mx-8 h-full bg-black flex-1" v-show="hasData">
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -21,6 +24,21 @@
 
     export default {
         name: 'ProjectCreate',
-        components: { ProjectForm }
+        components: { ProjectForm },
+        data () {
+            return {
+                project: null
+            }
+        },
+        computed: {
+            hasData () {
+                return this.project !== null
+            }
+        },
+        methods: {
+            onSubmit (data) {
+                this.project = data
+            }
+        }
     }
 </script>
