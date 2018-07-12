@@ -29,7 +29,7 @@
                 <span class="mr-2" v-if="loading">
                     <i class="fas fa-spin fa-spinner"></i>
                 </span>
-                <span v-else>Sauvegarder</span>
+                <span v-else>{{ exists ? 'Sauvegarder' : 'Suivant' }}</span>
             </button>
         </div>
     </form>
@@ -54,6 +54,14 @@
                 loading: false
             }
         },
+        computed: {
+            /**
+             * Determines whether the current project already exists
+             */
+            exists () {
+                return this.project !== null
+            }
+        },
         methods: {
             ...mapActions(['storeProject', 'updateProject']),
 
@@ -66,9 +74,11 @@
                 this.loading = true
 
                 let data = { ...this.project, ...this.form }
-                let process = this.project !== null ? this.updateProject(data) : this.storeProject(data)
+                this.$emit('submit', data)
 
-                process
+                if (!this.exists) return
+
+                this.updateProject(data)
                     .catch(({ message, errors }) => {
                         this.errors = collect(errors)
                         this.loading = false
@@ -91,7 +101,11 @@
             }
         },
         created () {
-            this.reset()
+            if (this.exists) {
+                this.form = this.project
+            } else {
+                this.reset()
+            }
         }
     }
 </script>
