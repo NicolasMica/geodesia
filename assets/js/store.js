@@ -4,9 +4,6 @@ import moment from 'moment'
 import axios from 'axios'
 import collect from 'collect.js'
 
-import Releve from './stores/Releve'
-import Chantier from './stores/Chantier'
-
 Vue.use(Vuex)
 
 const api = axios.create({
@@ -18,11 +15,6 @@ const api = axios.create({
 })
 
 const store = new Vuex.Store({
-    namespaced: true,
-    modules: {
-        releve: Releve,
-        chantier : Chantier,
-    },
     state: {
         user: {
             id: 1,
