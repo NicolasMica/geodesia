@@ -42,6 +42,7 @@
     import proj4 from 'proj4'
     import XYZ from 'ol/source/XYZ'
     import Text from 'ol/style/Text'
+    import Select from 'ol/interaction/Select.js';
 
     export default {
         name: 'Map',
@@ -79,6 +80,7 @@
                  */
                 let geometry = new Point(coordPosRealTime);
                 let markerpoint = new Feature(geometry);
+                markerpoint.clicable = true;
                 let iconStyle = new Style({
                     image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
                         anchor: [0.5, 46],
@@ -92,11 +94,12 @@
                 markerpoint.draggable = true;
                 this.vectorSourcepoints.addFeature(markerpoint);
                 this.markerpoints.push(markerpoint);
+
+                this.map.getView().animate({center: coordPosRealTime, zoom: 18});
                 /*
                 * on transform les coordonées dans en 4326
                  */
                 let coordpoint = proj.transform(coordPosRealTime, 'EPSG:3857', 'EPSG:4326');
-
 
             },
 
@@ -152,9 +155,9 @@
                                     })),
                                     text: new Text({
                                         text: feature.pr,
-                                        fill: new Fill({color: 'black'}),
+                                        fill: new Fill({color: 'white'}),
                                         offsetX: 5,
-                                        offsetY: 5
+                                        offsetY: -5
                                     })
                                 });
                                 let source = new proj4.Proj('EPSG:2154');
@@ -181,7 +184,6 @@
              * Add the first delimitation roadwork marker
              */
             addDebutChantier(){
-                let me = this;
                 let iconroadwork1 = new Style({
                     image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
                         anchor: [0.5, 46],
@@ -190,12 +192,12 @@
                         src: './assets/markers/roadwork1.png'
                     }))
                 });
-                me.DebutChantier.setStyle(iconroadwork1);
-                me.DebutChantier.draggable = true;
-                me.DebutChantier.setGeometry(new Point(this.posRealTime.getGeometry().getCoordinates()));
-                me.vectorSourcepoints.addFeature(me.DebutChantier);
-
-
+                this.DebutChantier.setStyle(iconroadwork1);
+                this.DebutChantier.draggable = true;
+                let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates()
+                this.DebutChantier.setGeometry(new Point(coordPosRealTime));
+                this.vectorSourcepoints.addFeature(this.DebutChantier);
+                this.map.getView().animate({center: coordPosRealTime, zoom: 18});
             },
 
             /**
@@ -205,7 +207,6 @@
                 /*
                  * ON declare le point du marker avec la geometry vide
                  */
-                let me = this;
                 let iconroadwork2 = new Style({
                     image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
                         anchor: [0.5, 46],
@@ -214,11 +215,12 @@
                         src: './assets/markers/roadwork2.png'
                     }))
                 });
-                me.FinChantier.setStyle(iconroadwork2);
-                me.FinChantier.draggable = true;
-                me.FinChantier.setGeometry(new Point(this.posRealTime.getGeometry().getCoordinates()));
-                me.vectorSourcepoints.addFeature(me.FinChantier);
-
+                this.FinChantier.setStyle(iconroadwork2);
+                this.FinChantier.draggable = true
+                let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates()
+                this.FinChantier.setGeometry(new Point(coordPosRealTime));
+                this.vectorSourcepoints.addFeature(this.FinChantier);
+                this.map.getView().animate({center: coordPosRealTime, zoom: 18});
             },
 
             /**
@@ -259,7 +261,6 @@
                 this.vectorSourcepk = new VectorSource({ features: [] })
 
                 let interaction = this.setupDrag()
-
                 this.map = new Map({
                     target: 'map',
                     interactions: new Interaction.defaults().extend([new interaction.Drag()]),
@@ -306,7 +307,7 @@
                         zoom: 5
                     })
                 });
-
+                this.setupClick()
                 /*
                  * MAINTENANT ON MET EN PLACE LE TRACKER
                  */
@@ -463,6 +464,18 @@
                 };
 
                 return interaction
+            },
+            /*
+             * setup click interaction
+             */
+            setupClick(){
+                let layer = this.vectorSourcepoints
+                let selectSingleClick = new Select()
+                this.map.addInteraction(selectSingleClick,{layers : [layer]});
+                selectSingleClick.on('select', function(e) {
+                        let feature =  e.target.getFeatures().getArray()[0];
+                        console.log("ICI TU PEUX ENREGISTRER LE RELEVE");
+                });
             }
         },
         mounted () {
