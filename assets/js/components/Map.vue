@@ -1,19 +1,19 @@
 <template>
     <div class="absolute pin">
         <div id="map" class="w-full h-full"></div>
-        <div class="fixed pin-x pin-b flex flex-col">
+        <div class="absolute pin-x pin-b flex flex-col pointer-events-none">
             <div class="p-4">
-                <button type="button" class="button is-red p-4" @click="addMarker">
+                <button type="button" class="button is-red p-4 pointer-events-auto" @click="addMarker">
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
             <div class="p-4">
-                <button type="button" class="button is-red p-4" @click="addDebutChantier">
+                <button type="button" class="button is-red p-4 pointer-events-auto" @click="addDebutChantier">
                     <i class="fas fa-play"></i>
                 </button>
             </div>
             <div class="p-4">
-                <button type="button" class="button is-red p-4" @click="addFinChantier">
+                <button type="button" class="button is-red p-4 pointer-events-auto" @click="addFinChantier">
                     <i class="fas fa-stop"></i>
                 </button>
             </div>
