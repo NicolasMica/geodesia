@@ -2,8 +2,14 @@
     <div>
         <div id="map" class="w-screen h-screen"></div>
         <div class="absolute pin-x pin-b">
-            <div class="center-align p-8">
+            <div class="left-align p-8">
                 <a @click="addMarker" class="btn-floating btn-large waves-effect waves-light red"> <i class="material-icons">add</i></a>
+            </div>
+            <div class="left-align p-8">
+                <a @click="addDebutChantier" class="btn-floating btn-large waves-effect waves-light red"> <i class="material-icons">launch</i></a>
+            </div>
+            <div class="left-align p-8">
+                <a @click="addFinChantier" class="btn-floating btn-large waves-effect waves-light red"> <i class="material-icons">stop</i></a>
             </div>
         </div>
     </div>
@@ -30,8 +36,10 @@
     import ol from 'ol';
     import GeoJSON from 'ol/format/GeoJSON.js';
     import osmtogeojson from 'osmtogeojson';
-    import turf from '@turf/turf';
+    import proj4 from 'proj4';
     import XYZ from 'ol/source/XYZ';
+    import Text from 'ol/style/Text';
+    import Select from 'ol/interaction/Select';
     export default {
         name: "Releve",
         data () {
@@ -43,9 +51,13 @@
                 precision : null,
                 posRealTime : null,
                 posRealTimePrecision : null,
-                markerpoint : null,
+                markerpoints : [],
                 road : null,
                 roadactuelle : null,
+                vectorSourceroads : null,
+                vectorSourcepk : null,
+                DebutChantier : new Feature({geometry: null}),
+                FinChantier : new Feature({geometry: null}),
             }
         },
         mounted () {
@@ -57,6 +69,12 @@
                 features: []
             });
             this.vectorSourcepoints = new Vectorsource({
+                features: []
+            });
+            this.vectorSourceroads = new Vectorsource({
+                features: []
+            });
+            this.vectorSourcepk = new Vectorsource({
                 features: []
             });
             /*
@@ -189,7 +207,16 @@
                     }),
                     new Vectorlayer({
                         title : "vectorSourcepoints",
-                        source: this.vectorSourcepoints
+                        source: this.vectorSourcepoints,
+                        zIndex: 99998
+                    }),
+                    new Vectorlayer({
+                        title: 'vectorSourceroads',
+                        source: this.vectorSourceroads
+                    }),
+                    new Vectorlayer({
+                        title: 'vectorSourcepk',
+                        source: this.vectorSourcepk
                     })
                 ],
                 view: new View({
@@ -197,24 +224,6 @@
                     zoom: 5
                 })
             });
-
-
-            /*
-             * ON declare le point du marker avec la geometry vide
-             */
-            this.markerpoint = new Feature({geometry: null});
-
-            let iconStyle = new Style({
-                image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
-                    anchor: [0.5, 46],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'pixels',
-                    src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png'
-                }))
-            });
-            this.markerpoint.setStyle(iconStyle);
-            this.markerpoint.draggable = true;
-            this.vectorSourcepoints.addFeature(this.markerpoint);
 
             /*
              * MAINTENANT ON MET EN PLACE LE TRACKER
@@ -275,7 +284,6 @@
         },
         methods : {
             addMarker() {
-                // TODO TYPE DE MARKER : debut de chantier / fin de chantier / probleme avec com et photo
                 /*
                  * on recupere les coordonnée du point de la position en temps reel
                  */
@@ -284,7 +292,20 @@
                  * on cree un point et un vecteur avec ces coordonnée
                  */
                 let geometry = new Point(coordPosRealTime);
-                this.markerpoint.setGeometry(geometry);
+                let markerpoint = new Feature(geometry);
+                let iconStyle = new Style({
+                    image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png',
+                        size : [32,48]
+                    }))
+                });
+                markerpoint.setStyle(iconStyle);
+                markerpoint.draggable = true;
+                this.vectorSourcepoints.addFeature(markerpoint);
+                this.markerpoints.push(markerpoint);
                 /*
                 * on transform les coordonées dans en 4326
                  */
@@ -293,6 +314,9 @@
 
             },
             getNearestRoad(lon,lat){
+                /*
+                 * GET Name OF the road
+                 */
                 let me = this;
                 let maxDist = 10; // maximum distance from the point in meters
                 let query = '[out:json]; way' +
@@ -307,66 +331,85 @@
                 }).then(function(json) {
                     if(me.roadactuelle === null || json.elements[0].tags.ref !==  me.roadactuelle ){
                         me.roadactuelle = json.elements[0].tags.ref;
-                        let queryroad = "[out:json];(way[\"ref\"=\""+ me.roadactuelle+"\"]; >;);out geom;";
-                        fetch('https://overpass-api.de/api/interpreter', {
-                            method: "POST",
-                            body: queryroad
+                        /*
+                         * GET PK
+                         */
+                        let road =  me.roadactuelle.replace(/\s+/g, '');
+                        fetch('http://localhost:8085/api/milestones?lib_rte='+road, {
+                            method: "GET"
                         }).then(function (response) {
                             return response.json();
                         }).then(function (responsejson) {
-                            //Style de la route
-                            let styleroad = new Style({
-                                stroke: new Stroke({
-                                    color: '#293F78',
-                                    width: 10
-                                })
-                            });
-                            let format = new GeoJSON({featureProjection:"EPSG:3857"});
-                            let features = format.readFeatures(osmtogeojson(responsejson));
-                            //TODO boucle sur les features et separer les routes des points
-                            //tabroad correspond au tableau de routes que l'on traite
-                            let tabroad = [];
                             //tabpk correspond au pk trouvés
                             let tabpk = [];
-                            features.forEach(function(feature){
-                                if(typeof feature.get("ref") !== 'undefined' && feature.get("ref") ===  me.roadactuelle && typeof feature.get("building") === 'undefined') {
-                                    feature.setStyle(styleroad);
-                                    tabroad.push(feature);
-                                }if (typeof feature.get("highway") !== 'undefined' && feature.get("highway") === "milestone"){
-                                    console.log(feature);
-                                }
+                            proj.setProj4(proj4);
+                            proj4.defs("EPSG:2154", "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+                            responsejson.forEach(function(feature){
+                                let iconpk = new Style({
+                                    image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
+                                        anchor: [0.5, 46],
+                                        anchorXUnits: 'fraction',
+                                        anchorYUnits: 'pixels',
+                                        src: './assets/markers/pk.png'
+                                    })),
+                                    text: new Text({
+                                        text: feature.pr,
+                                        fill: new Fill({color: 'black'}),
+                                        offsetX: 5,
+                                        offsetY: 5
+                                    })
+                                });
+                                var source = new proj4.Proj('EPSG:2154');
+                                var merkator = new proj4.Proj('EPSG:3857');
+                                let reproj = proj4(source,merkator,[parseFloat(feature.x_gps), parseFloat(feature.y_gps)]);
+                                let iconFeature = new Feature({
+                                    geometry: new Point(reproj),
+                                    pk: feature.pr,
+                                    route : feature.lib_rte
+                                });
+                                iconFeature.setStyle(iconpk);
+                                tabpk.push(iconFeature);
                             });
-                           // let entireRoad = features[0];
-                            //entireRoad.getGeometry().transform('EPSG:4326', 'EPSG:3857');
-                            //  entireRoad.setStyle()
-                            me.vectorSourcepoints.addFeatures(tabroad);
+                            me.vectorSourcepk.addFeatures(tabpk);
                         });
-
                     }
-
-                  /*
-
-                    TMP POUR USE TURF
-
-                    // convert to a turf.js feature
-                    let turfLine = format.writeFeatureObject(street);
-
-                    // show a marker every 200 meters
-                    let distance = 0.2;
-
-                    // get the line length in kilorm meters
-                    let length = turf.len(turfLine, 'kilometers');
-                    for (let i = 1; i <= length / distance; i++) {
-                        let turfPoint = turf.along(turfLine, i * distance, 'kilometers');
-
-                        // convert the generated point to a OpenLayers feature
-                        let marker = format.readFeature(turfPoint);
-                        marker.getGeometry().transform('EPSG:4326', 'EPSG:3857');
-                        me.vectorSourcepoints.addFeature(marker);
-                    }
-                    */
-
                 })
+            },
+            addDebutChantier(){
+                let me = this;
+                let iconroadwork1 = new Style({
+                    image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        src: './assets/markers/roadwork1.png'
+                    }))
+                });
+                me.DebutChantier.setStyle(iconroadwork1);
+                me.DebutChantier.draggable = true;
+                me.DebutChantier.setGeometry(new Point(this.posRealTime.getGeometry().getCoordinates()));
+                me.vectorSourcepoints.addFeature(me.DebutChantier);
+
+
+            },
+            addFinChantier(){
+                /*
+                 * ON declare le point du marker avec la geometry vide
+                 */
+                let me = this;
+                let iconroadwork2 = new Style({
+                    image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        src: './assets/markers/roadwork2.png'
+                    }))
+                });
+                me.FinChantier.setStyle(iconroadwork2);
+                me.FinChantier.draggable = true;
+                me.FinChantier.setGeometry(new Point(this.posRealTime.getGeometry().getCoordinates()));
+                me.vectorSourcepoints.addFeature(me.FinChantier);
+
             }
         }
     }
