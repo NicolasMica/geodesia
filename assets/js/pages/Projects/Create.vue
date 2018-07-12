@@ -9,9 +9,12 @@
                         </router-link>
                         <p class="ml-auto py-4 uppercase font-medium text-black">Création de chantier</p>
                     </div>
-                    <project-form @submit="onSubmit" v-if="!hasData"></project-form>
-                    <div class="relative -mx-4 md:-mx-8 h-full bg-black flex-1" v-show="hasData">
-
+                    <project-form @submit="onSubmit" v-if="!hasData != true"></project-form>
+                    <div class="relative -mx-4 md:-mx-8 h-full bg-black flex-1">
+                        <roadwork-map></roadwork-map>
+                        <div class="fixed pin-b pin-x flex justify-center py-4">
+                            <button class="button is-green">Terminer</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -21,10 +24,11 @@
 
 <script>
     import ProjectForm from './Form.vue'
+    import RoadworkMap from '../../components/Map.vue'
 
     export default {
         name: 'ProjectCreate',
-        components: { ProjectForm },
+        components: { ProjectForm, RoadworkMap },
         data () {
             return {
                 project: null
