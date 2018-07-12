@@ -20,7 +20,7 @@
     import ProjectForm from './Form.vue'
 
     export default {
-        name: 'ProjectEdit',
+        name: 'ProjectCreate',
         components: { ProjectForm }
     }
 </script>

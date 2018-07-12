@@ -36,7 +36,7 @@
              * Current project
              */
             project () {
-                return this.projects.find(project => project.id == this.id)
+                return this.projects.where('id', this.id).first()
             }
         },
         methods: {
