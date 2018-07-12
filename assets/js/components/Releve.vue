@@ -58,9 +58,17 @@
                 vectorSourcepk : null,
                 DebutChantier : new Feature({geometry: null}),
                 FinChantier : new Feature({geometry: null}),
+                url_osrm_route : '//router.project-osrm.org/route/v1/driving/',
+                distance : null
             }
         },
         mounted () {
+            /*
+             *On affect proj4 a openlayers et on defini la projection 2154
+             */
+            proj.setProj4(proj4);
+            proj4.defs("EPSG:2154", "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+
 
             /*
              * DEFINE VECTOR SOURCE (ON AJOUTE LES FEATURES AU VECTOR SOURCE)
@@ -235,7 +243,7 @@
                 /*
                 * et on envoi les coordonnée à l'api osm pour recuperer la route et laposition par rapport au pk avant et pk d'apres
                 */
-                me.getNearestRoad(coord[0], coord[1]);
+                me.getNearestRoad(coord);
 
                 let coordTransform = proj.fromLonLat(coord,'EPSG:3857');
                 me.precision  = position.coords.accuracy;
@@ -278,6 +286,8 @@
                     me.posRealTimePrecision.setGeometry(geometryPrecision);
                 }
 
+
+
             }, function(error){
                 console.log('code: '+error.code+'\n'+'message: '+ error.message, 6000)
             }, { maximumAge: 3000, timeout: 8000, enableHighAccuracy: true });
@@ -313,7 +323,17 @@
 
 
             },
-            getNearestRoad(lon,lat){
+            getNearestRoad(coord){
+                let lon = coord[0];
+                let lat = coord[1];
+                /*
+                 * SI les PK Sont charger on recherce la distance sinon on attend qu'ils soient charger
+                 * et on appelle la fonction dans le callback de l'appel ajax de la recuperation des pk
+                 */
+
+                if(typeof this.vectorSourcepk.features !== "undefined"){
+                    me.getDistanceBetweenTwoPoints(coord);
+                }
                 /*
                  * GET Name OF the road
                  */
@@ -342,8 +362,6 @@
                         }).then(function (responsejson) {
                             //tabpk correspond au pk trouvés
                             let tabpk = [];
-                            proj.setProj4(proj4);
-                            proj4.defs("EPSG:2154", "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
                             responsejson.forEach(function(feature){
                                 let iconpk = new Style({
                                     image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
@@ -359,8 +377,8 @@
                                         offsetY: 5
                                     })
                                 });
-                                var source = new proj4.Proj('EPSG:2154');
-                                var merkator = new proj4.Proj('EPSG:3857');
+                                let source = new proj4.Proj('EPSG:2154');
+                                let merkator = new proj4.Proj('EPSG:3857');
                                 let reproj = proj4(source,merkator,[parseFloat(feature.x_gps), parseFloat(feature.y_gps)]);
                                 let iconFeature = new Feature({
                                     geometry: new Point(reproj),
@@ -371,6 +389,9 @@
                                 tabpk.push(iconFeature);
                             });
                             me.vectorSourcepk.addFeatures(tabpk);
+
+                            //premiere fois que l'on cherche le point le plus proche
+                            me.getDistanceBetweenTwoPoints(coord);
                         });
                     }
                 })
@@ -410,6 +431,25 @@
                 me.FinChantier.setGeometry(new Point(this.posRealTime.getGeometry().getCoordinates()));
                 me.vectorSourcepoints.addFeature(me.FinChantier);
 
+            },
+            getDistanceBetweenTwoPoints(coord){
+                let me = this;
+                let merkator = new proj4.Proj('EPSG:3857');
+                let gps = new proj4.Proj('EPSG:4326');
+                let reprojcoord = proj4(gps,merkator,[parseFloat(coord[0]), parseFloat(coord[1])]);
+                let closestFeature = me.vectorSourcepk.getClosestFeatureToCoordinate(reprojcoord);
+                let reprojfeature = proj4(merkator,gps,closestFeature.getGeometry().getCoordinates());
+                console.log(closestFeature);
+                fetch(me.url_osrm_route + coord + ';' + reprojfeature).then(function(r) {
+                    return r.json();
+                }).then(function(json) {
+                    if(json.code !== 'Ok') {
+                        console.log("no result")
+                    }
+                    else {
+                        me.distance = json.routes[0].distance;
+                    }
+                });
             }
         }
     }
