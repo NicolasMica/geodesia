@@ -62,11 +62,17 @@ const store = new Vuex.Store({
          * @param store
          */
         fetchProjects (store) {
-            api.get('/roadworks')
-                .then(
-                    response => store.commit('FETCH_PROJECTS', response.data)
-                )
-                .catch(console.error)
+            return new Promise((resolve, reject) => {
+                api.get('/roadworks')
+                    .then(response => {
+                        store.commit('FETCH_PROJECTS', response.data)
+                        resolve()
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        reject(error)
+                    })
+            })
         },
 
         /**
@@ -75,11 +81,17 @@ const store = new Vuex.Store({
          * @param projectId - Project primary key
          */
         fetchProject (store, projectId) {
-            api.get(`/roadworks/${projectId}`)
-                .then(
-                    response => store.commit('UPDATE_PROJECT', response.data)
-                )
-                .catch(console.error)
+            return new Promise((resolve, reject) => {
+                api.get(`/roadworks/${projectId}`)
+                    .then(response => {
+                        store.commit('UPDATE_PROJECT', response.data)
+                        resolve()
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        reject(error)
+                    })
+            })
         },
 
         /**
@@ -88,11 +100,17 @@ const store = new Vuex.Store({
          * @param project - Project form
          */
         storeProject (store, project) {
-            api.post('/roadworks', project)
-                .then(
-                    response => store.commit('STORE_PROJECT', response.data)
-                )
-                .catch(console.error)
+            return new Promise((resolve, reject) => {
+                api.post('/roadworks', project)
+                    .then(response => {
+                        store.commit('STORE_PROJECT', response.data)
+                        resolve()
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        reject(error)
+                    })
+            })
         },
 
         /**
@@ -101,11 +119,17 @@ const store = new Vuex.Store({
          * @param project - Project entity
          */
         updateProject (store, project) {
-            api.patch(`/roadworks/${project.id}`, project)
-                .then(
-                    response => store.commit('UPDATE_PROJECT', response.data)
-                )
-                .catch(console.error)
+            return new Promise((resolve, reject) => {
+                api.patch(`/roadworks/${project.id}`, project)
+                    .then(response => {
+                        store.commit('UPDATE_PROJECT', response.data)
+                        resolve()
+                    })
+                    .catch(error => {
+                        console.error(error.message)
+                        reject(error.message)
+                    })
+            })
         },
 
         /**
@@ -114,11 +138,17 @@ const store = new Vuex.Store({
          * @param project - Project entity
          */
         destroyProject (store, project) {
-            api.delete(`/roadworks/${project.id}`)
-                .then(
-                    response => store.commit('DESTROY_PROJECT', project)
-                )
-                .catch(console.error)
+            return new Promise((resolve, reject) => {
+                api.delete(`/roadworks/${project.id}`)
+                    .then(response => {
+                        store.commit('DESTROY_PROJECT', project)
+                        resolve()
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        reject(error)
+                    })
+            })
         }
     },
     getters: {
