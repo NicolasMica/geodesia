@@ -48,6 +48,7 @@
     import XYZ from 'ol/source/XYZ'
     import Text from 'ol/style/Text'
     import Select from 'ol/interaction/Select.js';
+    import Overlay from 'ol/Overlay'
 
     export default {
         name: 'Map',
@@ -262,19 +263,41 @@
 
                 let reprojcoord = proj4(gps, merkator, [ parseFloat(coord[0]), parseFloat(coord[1]) ])
                 let closestFeature = this.vectorSourcepk.getClosestFeatureToCoordinate(reprojcoord)
-                let reprojfeature = proj4(merkator, gps, closestFeature.getGeometry().getCoordinates())
+
+
+                let tab = [];
+                this.vectorSourcepk.getFeatures().forEach(pk => {
+                    if(pk.get('pk') === closestFeature.get('pk')){
+                        tab.push(pk);
+                    }
+                })
 
                 console.log(closestFeature)
 
-                fetch(this.url_osrm_route + coord + ';' + reprojfeature)
-                    .then(response => response.json())
-                    .then(json => {
-                        if(json.code !== 'Ok') {
-                            console.log("no result")
-                        } else {
-                            this.distance = json.routes[0].distance
-                        }
-                    })
+                let distancetab = []
+                tab.forEach(pk => {
+                    let reprojfeature = proj4(merkator, gps, pk.getGeometry().getCoordinates())
+                    fetch(this.url_osrm_route + coord + ';' + reprojfeature)
+                        .then(response => response.json())
+                        .then(json => {
+                            if(json.code !== 'Ok') {
+                                console.log("no result")
+                            } else {
+                                distancetab.push(json.routes[0].distance) ;
+                            }
+                        })
+                })
+
+                let distanceref = 100000000;
+                distancetab.forEach(distance => {
+                    if (distanceref > distance ){
+                        distanceref = distance
+                    }
+                })
+
+                this.distance = distanceref
+
+                console.log(this.distance)
             },
             /**
              * Initialize the component
@@ -373,7 +396,6 @@
                  */
                 let me = this;
                 this.watchPos = navigator.geolocation.watchPosition(function(position){
-
                     let coord = [parseFloat(position.coords.longitude), parseFloat(position.coords.latitude)];
                     /*
                     * et on envoi les coordonnée à l'api osm pour recuperer la route et laposition par rapport au pk avant et pk d'apres
@@ -531,7 +553,7 @@
                 var popup = new Overlay({
                     element: document.getElementById('popup')
                 });
-                map.addOverlay(popup);
+                this.map.addOverlay(popup);
 
             },
             /**
@@ -554,6 +576,7 @@
             }
         },
         mounted () {
+            console.log('je passe dans le monted')
             this.initialize()
         }
     }
