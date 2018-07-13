@@ -9,32 +9,7 @@
                         </router-link>
                         <p class="ml-auto py-4 uppercase font-medium text-black">Edition de marker</p>
                     </div>
-                    <form method="POST" @submit.prevent="submit">
-                        <!-- NAME -->
-                        <div class="mb-4" :class="{ 'has-error': errors.has('name') }">
-                            <label class="label mb-2 px-4">Nom</label>
-                            <input type="text" class="input" v-model="form.name">
-                            <p class="mt-2 px-4 text-xs text-red" v-if="errors.has('name')">{{ errors.get('name').first() }}</p>
-                        </div>
-                        <!-- DESCRIPTION -->
-                        <div class="mb-4" :class="{ 'has-error': errors.has('description') }">
-                            <label class="label mb-2 px-4">Description</label>
-                            <textarea class="input rounded-xl" v-model="form.description"></textarea>
-                            <p class="mt-2 px-4 text-xs text-red" v-if="errors.has('description')">{{ errors.get('description').first() }}</p>
-                        </div>
-                        <div>
-                            <p class="label mb-2 px-4">Photos</p>
-                            <div class="flex flex-wrap -m-2">
-                                <div class="p-2" v-for="photo in marker.photos" :key="photo.id">
-                                    <div class="w-1/2 h-32 bg-grey"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- BUTTON -->
-                        <div class="fixed pin-x pin-b flex justify-center mb-4">
-                            <button class="button is-green">Sauvegarder</button>
-                        </div>
-                    </form>
+                    <marker-from :marker="marker"></marker-from>
                 </div>
             </div>
         </div>
@@ -44,9 +19,11 @@
 <script>
     import collect from 'collect.js'
     import { mapGetters } from 'vuex'
+    import MarkerForm from './Form.vue'
 
     export default {
-        name: 'ProjectShow',
+        name: 'ProjectEdit',
+        components: { MarkerForm },
         props: ['project_id', 'marker_id'],
         data () {
             return {
