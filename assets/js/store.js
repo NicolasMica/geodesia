@@ -21,7 +21,8 @@ const store = new Vuex.Store({
             email: 'john@doe.com',
             name: 'John Doe'
         },
-        projects: collect([])
+        projects: collect([]),
+        marker: null
     },
     mutations: {
         /**
@@ -46,7 +47,7 @@ const store = new Vuex.Store({
          * @param project - Project entity
          * @return {*}
          */
-        UPDATE_PROJECT: (state, project) => state.projects.transform(entity => entity.id === project.id ? entity : entity),
+        UPDATE_PROJECT: (state, project) => state.projects.transform(entity => entity.id === project.id ? project : entity),
 
         /**
          * Remove a given project from the state
@@ -54,7 +55,49 @@ const store = new Vuex.Store({
          * @param project - Project entity
          * @return {*}
          */
-        DESTROY_PROJECT: (state, project) => state.projects = state.projects.filter(entity => entity.id !== project.id)
+        DESTROY_PROJECT: (state, project) => state.projects = state.projects.filter(entity => entity.id !== project.id),
+
+        /**
+         * Store a new marker in a given project
+         * @param state - Store state
+         * @param marker - Marker entity
+         * @return {*}
+         */
+        STORE_MARKER: (state, marker) => state.projects.transform(entity => {
+            if (entity.id === marker.roadwork_id) {
+                entity.markers.push(marker)
+            }
+
+            return entity
+        }),
+
+        /**
+         * Store a new marker in a given project
+         * @param state - Store state
+         * @param marker - Marker entity
+         * @return {*}
+         */
+        UPDATE_MARKER: (state, marker) => state.projects.transform(entity => {
+            if (entity.id === marker.roadwork_id) {
+                entity.markers.transaction(item => item.id === marker.id ? marker : item)
+            }
+
+            return entity
+        }),
+
+        /**
+         * Store a new marker in a given project
+         * @param state - Store state
+         * @param marker - Marker entity
+         * @return {*}
+         */
+        DESTROY_MARKER: (state, marker) => state.projects.transform(entity => {
+            if (entity.id === marker.roadwork_id) {
+                entity.markers = entity.markers.filter(item => item.id !== marker.id)
+            }
+
+            return entity
+        })
     },
     actions: {
         /**
@@ -149,6 +192,63 @@ const store = new Vuex.Store({
                         reject(error.response.data)
                     })
             })
+        },
+
+        /**
+         * Stores a new marker
+         * @param store
+         * @param marker - Marker form
+         */
+        storeMarker (store, marker) {
+            return new Promise((resolve, reject) => {
+                api.post(`/roadworks/${marker.roadwork_id}/markers`, marker)
+                    .then(response => {
+                        store.commit('STORE_MARKER', response.data)
+                        resolve(response.data)
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        reject(error.response.data)
+                    })
+            })
+        },
+
+        /**
+         * Update a given marker
+         * @param store
+         * @param marker - Marker entity
+         */
+        updateMarker (store, marker) {
+            return new Promise((resolve, reject) => {
+                api.patch(`/roadworks/${marker.roadwork_id}/markers/${marker.id}`, marker)
+                    .then(response => {
+                        store.commit('UPDATE_MARKER', response.data)
+                        resolve()
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        reject(error.response.data)
+                    })
+            })
+        },
+
+        /**
+         * Destroy a given marker
+         * @param store
+         * @param marker - Marker entity
+         */
+        destroyMarker (store, marker) {
+            return new Promise((resolve, reject) => {
+                api.delete(`/roadworks/${marker.roadwork_id}/markers/${marker.id}`)
+                    .then(response => {
+                        store.commit('DESTROY_MARKER', marker)
+                        resolve()
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        reject(error.response.data)
+                    })
+            })
         }
     },
     getters: {
@@ -171,6 +271,10 @@ const store = new Vuex.Store({
                 project.created_at = moment(project.created_at)
                 return project
             }).sortByDesc('updated_at')
+        },
+
+        marker (state) {
+            return state.marker
         }
     }
 })
