@@ -2,7 +2,7 @@
     <div class="absolute pin">
         <div id="map" class="w-full h-full"></div>
         <div class="absolute pin-x pin-b flex flex-col p-4 pointer-events-none">
-            <div class="mb-4">
+            <div class="mb-4" v-show="enableMarkers">
                 <button type="button" class="button is-blue p-4 pointer-events-auto" @click="addMarker">
                     <i class="fas fa-map-marker-alt"></i>
                 </button>
@@ -46,6 +46,12 @@
 
     export default {
         name: 'Map',
+        props: {
+            enableMarkers: {
+                type: Boolean,
+                default: false
+            }
+        },
         data () {
             return {
                 map : null,

@@ -21,7 +21,7 @@
                         <project-form :project="project"></project-form>
                     </div>
                     <div class="relative -mx-4 md:-mx-8 bg-black flex-1" v-if="showMap">
-                        <roadwork-map></roadwork-map>
+                        <roadwork-map :enable-markers="true"></roadwork-map>
                         <button class="button absolute pin-t pin-r m-4 p-4 bg-white" @click="showMap = false">
                             <i class="fas fa-arrow-left"></i>
                         </button>
