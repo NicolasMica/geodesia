@@ -1,6 +1,9 @@
 <template>
     <div class="absolute pin">
         <div id="map" class="w-full h-full"></div>
+        <div style="display: none;">
+            <div id="popup" title="Welcome to OpenLayers"></div>
+        </div>
         <div class="absolute pin-x pin-b flex flex-col pointer-events-none">
             <div class="p-4">
                 <button type="button" class="button is-red p-4 pointer-events-auto" @click="addMarker(null)">
@@ -117,7 +120,6 @@
 
 
             },
-
             /**
              * Determines the nearest road and its milestones
              */
@@ -195,7 +197,6 @@
                     }
                 })
             },
-
             /**
              * Add the first delimitation roadwork marker
              */
@@ -223,7 +224,6 @@
 
                 this.vectorSourceChantier.addFeature(this.DebutChantier)
             },
-
             /**
              * Add the last delimitation roadwork marker
              */
@@ -253,7 +253,6 @@
                 }
                 this.vectorSourceChantier.addFeature(this.FinChantier);
             },
-
             /**
              * Get the distance between the nearest milestone and the given coords
              */
@@ -277,7 +276,6 @@
                         }
                     })
             },
-
             /**
              * Initialize the component
              */
@@ -344,7 +342,7 @@
                     })
                 });
                 this.setupClick()
-
+                this.setupOverlay()
                 /*
                  * get roadwork and markers
                  */
@@ -429,7 +427,6 @@
                     console.log('code: '+error.code+'\n'+'message: '+ error.message, 6000)
                 }, { maximumAge: 3000, timeout: 8000, enableHighAccuracy: true });
             },
-
             /**
              * Setup drag interactions
              */
@@ -527,7 +524,17 @@
 
                 return interaction
             },
-            /*
+            /**
+             * setup overlay for popup
+             */
+            setupOverlay(){
+                var popup = new Overlay({
+                    element: document.getElementById('popup')
+                });
+                map.addOverlay(popup);
+
+            },
+            /**
              * setup click interaction
              */
             setupClick(){
@@ -536,7 +543,13 @@
                 this.map.addInteraction(selectSingleClick,{layers : [layer]});
                 selectSingleClick.on('select', function(e) {
                         let feature =  e.target.getFeatures().getArray()[0];
-                        console.log("ICI TU PEUX ENREGISTRER LE RELEVE");
+
+                        if(feature.draggable == true){
+                            console.log("ICI TU PEUX ENREGISTRER LE RELEVE");
+                        }else {
+                            console.log("ICI POPUP");
+                        }
+
                 });
             }
         },
