@@ -549,8 +549,20 @@
                 selectSingleClick.on('select', (e) => {
                         let feature =  e.target.getFeatures().getArray()[0];
 
-                        if(feature.draggable == true){
-                            console.log("ICI TU PEUX ENREGISTRER LE RELEVE");
+                        if(feature.draggable == true) {
+                            let coords = feature.getGeometry().transform("EPSG:3857", "EPSG:4326").getCoordinates()
+
+                            this.$store.state.marker = {
+                                longitude: coords[0],
+                                latitude: coords[1]
+                            }
+
+                            this.$router.push({
+                                name: 'markers.create',
+                                params: {
+                                    project_id: this.project.id
+                                }
+                            })
                         }else {
                             console.log("ICI POPUP");
                         }
