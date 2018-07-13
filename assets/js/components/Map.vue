@@ -45,6 +45,7 @@
     import XYZ from 'ol/source/XYZ'
     import Text from 'ol/style/Text'
     import Select from 'ol/interaction/Select.js';
+    import Overlay from 'ol/Overlay'
 
     export default {
         name: 'Map',
@@ -535,7 +536,7 @@
                 var popup = new Overlay({
                     element: document.getElementById('popup')
                 });
-                map.addOverlay(popup);
+                this.map.addOverlay(popup);
 
             },
             /**
@@ -545,7 +546,7 @@
                 let layer = this.vectorSourcepoints
                 let selectSingleClick = new Select()
                 this.map.addInteraction(selectSingleClick,{layers : [layer]});
-                selectSingleClick.on('select', function(e) {
+                selectSingleClick.on('select', (e) => {
                         let feature =  e.target.getFeatures().getArray()[0];
 
                         if(feature.draggable == true){
@@ -572,6 +573,9 @@
                     to_lat: toCoords[1]
                 })
             })
+        },
+        beforeDestroy () {
+            navigator.geolocation.clearWatch(this.watchPos)
         }
     }
 </script>
