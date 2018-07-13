@@ -11,9 +11,14 @@
                     </div>
                     <project-form @submit="onSubmit" v-if="!hasData"></project-form>
                     <div class="relative -mx-4 md:-mx-8 h-full bg-black flex-1" v-if="hasData">
-                        <roadwork-map></roadwork-map>
+                        <roadwork-map @update="onMapUpdate"></roadwork-map>
                         <div class="fixed pin-b pin-x flex justify-center py-4 pointer-events-none">
-                            <button class="button is-green pointer-events-auto">Terminer</button>
+                            <button class="button is-green pointer-events-auto" @click="submit" :disabled="loading">
+                                <span v-show="!loading">Terminer</span>
+                                <span v-show="loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -23,6 +28,7 @@
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
     import ProjectForm from './Form.vue'
     import RoadworkMap from '../../components/Map.vue'
 
@@ -31,7 +37,8 @@
         components: { ProjectForm, RoadworkMap },
         data () {
             return {
-                project: null
+                project: null,
+                loading: false
             }
         },
         computed: {
@@ -40,8 +47,41 @@
             }
         },
         methods: {
+            ...mapActions(['storeProject']),
+
+            /**
+             * Trigger submission
+             */
+            submit () {
+                window.events.$emit('map:coords')
+            },
+
+            /**
+             * Handle form submit
+             */
             onSubmit (data) {
                 this.project = data
+            },
+
+            /**
+             * Update the project coords
+             * @param coords
+             */
+            onMapUpdate (coords) {
+                if (this.loading) return
+
+                this.project = { ...this.project, ...coords }
+
+                this.loading = true
+                this.storeProject(this.project)
+                    .then(project => this.$router.push({
+                        name: 'projects.edit',
+                        params: {
+                            id: project.id
+                        }
+                    }))
+                    .catch(console.error)
+                    .then(() => this.loading = false)
             }
         }
     }

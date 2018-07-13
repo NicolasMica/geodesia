@@ -480,6 +480,19 @@
         },
         mounted () {
             this.initialize()
+        },
+        created () {
+            window.events.$on('map:coords', () => {
+                let fromCoords = this.DebutChantier.getGeometry().transform("EPSG:3857", "EPSG:4326").getCoordinates()
+                let toCoords = this.FinChantier.getGeometry().transform("EPSG:3857", "EPSG:4326").getCoordinates()
+
+                this.$emit('update', {
+                    from_long: fromCoords[0],
+                    from_lat: fromCoords[1],
+                    to_long: toCoords[0],
+                    to_lat: toCoords[1]
+                })
+            })
         }
     }
 </script>

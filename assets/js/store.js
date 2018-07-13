@@ -104,7 +104,7 @@ const store = new Vuex.Store({
                 api.post('/roadworks', project)
                     .then(response => {
                         store.commit('STORE_PROJECT', response.data)
-                        resolve()
+                        resolve(response.data)
                     })
                     .catch(error => {
                         console.error(error)
