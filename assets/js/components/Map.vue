@@ -95,14 +95,14 @@
                     /*
                      * on cree un point et un vecteur avec ces coordonnée
                      */
-                    let geometry = new Point(coordPosRealTime);
+                     let geometry = new Point(coordPosRealTime);
                      markerpoint = new Feature(geometry);
-                    markerpoint.draggable = true;
-                    this.map.getView().animate({center: coordPosRealTime, zoom: 18});
+                     markerpoint.draggable = true;
+                     this.map.getView().animate({center: coordPosRealTime, zoom: 18});
                 }else{
-                    let geometry = new Point(coord);
+                     let geometry = new Point(coord);
                      markerpoint = new Feature(geometry);
-                    markerpoint.draggable = false;
+                     markerpoint.draggable = false;
                 }
 
 
@@ -111,7 +111,7 @@
                         anchor: [0.5, 46],
                         anchorXUnits: 'fraction',
                         anchorYUnits: 'pixels',
-                        src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png',
+                        src: './assets/markers/marker.png',
                         size : [32,48]
                     }))
                 });
@@ -265,19 +265,41 @@
 
                 let reprojcoord = proj4(gps, merkator, [ parseFloat(coord[0]), parseFloat(coord[1]) ])
                 let closestFeature = this.vectorSourcepk.getClosestFeatureToCoordinate(reprojcoord)
-                let reprojfeature = proj4(merkator, gps, closestFeature.getGeometry().getCoordinates())
+
+
+                let tab = [];
+                this.vectorSourcepk.getFeatures().forEach(pk => {
+                    if(pk.get('pk') === closestFeature.get('pk')){
+                        tab.push(pk);
+                    }
+                })
 
                 console.log(closestFeature)
 
-                fetch(this.url_osrm_route + coord + ';' + reprojfeature)
-                    .then(response => response.json())
-                    .then(json => {
-                        if(json.code !== 'Ok') {
-                            console.log("no result")
-                        } else {
-                            this.distance = json.routes[0].distance
-                        }
-                    })
+                let distancetab = []
+                tab.forEach(pk => {
+                    let reprojfeature = proj4(merkator, gps, pk.getGeometry().getCoordinates())
+                    fetch(this.url_osrm_route + coord + ';' + reprojfeature)
+                        .then(response => response.json())
+                        .then(json => {
+                            if(json.code !== 'Ok') {
+                                console.log("no result")
+                            } else {
+                                distancetab.push(json.routes[0].distance) ;
+                            }
+                        })
+                })
+
+                let distanceref = 100000000;
+                distancetab.forEach(distance => {
+                    if (distanceref > distance ){
+                        distanceref = distance
+                    }
+                })
+
+                this.distance = distanceref
+
+                console.log(this.distance)
             },
 
             /**
@@ -377,7 +399,6 @@
                  */
                 let me = this;
                 this.watchPos = navigator.geolocation.watchPosition(function(position){
-
                     let coord = [parseFloat(position.coords.longitude), parseFloat(position.coords.latitude)];
                     /*
                     * et on envoi les coordonnée à l'api osm pour recuperer la route et laposition par rapport au pk avant et pk d'apres
@@ -571,6 +592,7 @@
             }
         },
         mounted () {
+            console.log('je passe dans le monted')
             this.initialize()
         },
         created () {
