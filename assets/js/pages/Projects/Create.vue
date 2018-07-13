@@ -11,7 +11,7 @@
                     </div>
                     <project-form @submit="onSubmit" v-if="!hasData"></project-form>
                     <div class="relative -mx-4 md:-mx-8 h-full bg-black flex-1" v-if="hasData">
-                        <roadwork-map></roadwork-map>
+                        <roadwork-map action="create"></roadwork-map>
                         <div class="fixed pin-b pin-x flex justify-center py-4 pointer-events-none">
                             <button class="button is-green pointer-events-auto">Terminer</button>
                         </div>

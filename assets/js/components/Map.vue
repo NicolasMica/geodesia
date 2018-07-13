@@ -3,19 +3,21 @@
         <div id="map" class="w-full h-full"></div>
         <div class="absolute pin-x pin-b flex flex-col pointer-events-none">
             <div class="p-4">
-                <button type="button" class="button is-red p-4 pointer-events-auto" @click="addMarker">
+                <button type="button" class="button is-red p-4 pointer-events-auto" @click="addMarker(null)">
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
-            <div class="p-4">
-                <button type="button" class="button is-red p-4 pointer-events-auto" @click="addDebutChantier">
-                    <i class="fas fa-play"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <button type="button" class="button is-red p-4 pointer-events-auto" @click="addFinChantier">
-                    <i class="fas fa-stop"></i>
-                </button>
+            <div v-if="action === 'create'">
+                <div class="p-4">
+                    <button type="button" class="button is-red p-4 pointer-events-auto" @click="addDebutChantier(null)">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <button type="button" class="button is-red p-4 pointer-events-auto" @click="addFinChantier(null)">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -46,6 +48,13 @@
 
     export default {
         name: 'Map',
+        props: {
+            project: {
+                type: Object,
+                default: null
+            },
+            action : null
+        },
         data () {
             return {
                 map : null,
@@ -70,17 +79,28 @@
             /**
              * Add a marker to the map
              */
-            addMarker() {
-                /*
-                 * on recupere les coordonnée du point de la position en temps reel
-                 */
-                let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates();
-                /*
-                 * on cree un point et un vecteur avec ces coordonnée
-                 */
-                let geometry = new Point(coordPosRealTime);
-                let markerpoint = new Feature(geometry);
-                markerpoint.clicable = true;
+            addMarker(coord) {
+
+                let markerpoint;
+                if (coord == null){
+                    /*
+                * on recupere les coordonnée du point de la position en temps reel
+                */
+                    let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates();
+                    /*
+                     * on cree un point et un vecteur avec ces coordonnée
+                     */
+                    let geometry = new Point(coordPosRealTime);
+                     markerpoint = new Feature(geometry);
+                    markerpoint.draggable = true;
+                    this.map.getView().animate({center: coordPosRealTime, zoom: 18});
+                }else{
+                    let geometry = new Point(coord);
+                     markerpoint = new Feature(geometry);
+                    markerpoint.draggable = false;
+                }
+
+
                 let iconStyle = new Style({
                     image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
                         anchor: [0.5, 46],
@@ -91,15 +111,10 @@
                     }))
                 });
                 markerpoint.setStyle(iconStyle);
-                markerpoint.draggable = true;
                 this.vectorSourcepoints.addFeature(markerpoint);
                 this.markerpoints.push(markerpoint);
 
-                this.map.getView().animate({center: coordPosRealTime, zoom: 18});
-                /*
-                * on transform les coordonées dans en 4326
-                 */
-                let coordpoint = proj.transform(coordPosRealTime, 'EPSG:3857', 'EPSG:4326');
+
 
             },
 
@@ -156,8 +171,9 @@
                                     text: new Text({
                                         text: feature.pr,
                                         fill: new Fill({color: 'white'}),
-                                        offsetX: 5,
-                                        offsetY: -5
+                                        offsetX: 0,
+                                        offsetY: -13,
+                                        font : '14px sans-serif'
                                     })
                                 });
                                 let source = new proj4.Proj('EPSG:2154');
@@ -183,7 +199,7 @@
             /**
              * Add the first delimitation roadwork marker
              */
-            addDebutChantier(){
+            addDebutChantier(coord){
                 let iconroadwork1 = new Style({
                     image: new StyleIcons(/** @type {olx.style.IconOptions} */ ({
                         anchor: [0.5, 46],
@@ -193,17 +209,25 @@
                     }))
                 });
                 this.DebutChantier.setStyle(iconroadwork1);
-                this.DebutChantier.draggable = true;
-                let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates()
-                this.DebutChantier.setGeometry(new Point(coordPosRealTime));
-                this.vectorSourcepoints.addFeature(this.DebutChantier);
-                this.map.getView().animate({center: coordPosRealTime, zoom: 18});
+                if (coord == null){
+                    let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates()
+                    this.DebutChantier.setGeometry(new Point(coordPosRealTime));
+                    this.DebutChantier.draggable = true;
+                    this.map.getView().animate({center: coordPosRealTime, zoom: 18})
+                }else {
+                    this.DebutChantier.setGeometry(new Point(coord));
+                    this.DebutChantier.draggable = false;
+                }
+
+
+
+                this.vectorSourceChantier.addFeature(this.DebutChantier)
             },
 
             /**
              * Add the last delimitation roadwork marker
              */
-            addFinChantier(){
+            addFinChantier(coord){
                 /*
                  * ON declare le point du marker avec la geometry vide
                  */
@@ -215,12 +239,19 @@
                         src: './assets/markers/roadwork2.png'
                     }))
                 });
-                this.FinChantier.setStyle(iconroadwork2);
-                this.FinChantier.draggable = true
-                let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates()
-                this.FinChantier.setGeometry(new Point(coordPosRealTime));
-                this.vectorSourcepoints.addFeature(this.FinChantier);
-                this.map.getView().animate({center: coordPosRealTime, zoom: 18});
+                this.FinChantier.setStyle(iconroadwork2)
+                if (coord == null){
+
+                    let coordPosRealTime = this.posRealTime.getGeometry().getCoordinates()
+                    this.FinChantier.setGeometry(new Point(coordPosRealTime));
+                    this.FinChantier.draggable = true
+                    this.map.getView().animate({center: coordPosRealTime, zoom: 18});
+
+                }else {
+                    this.FinChantier.setGeometry(new Point(coord));
+                    this.FinChantier.draggable = true
+                }
+                this.vectorSourceChantier.addFeature(this.FinChantier);
             },
 
             /**
@@ -259,6 +290,7 @@
                 this.vectorSourcepoints = new VectorSource({ features: [] })
                 this.vectorSourceroads = new VectorSource({ features: [] })
                 this.vectorSourcepk = new VectorSource({ features: [] })
+                this.vectorSourceChantier = new VectorSource({ features: [] })
 
                 let interaction = this.setupDrag()
                 this.map = new Map({
@@ -300,6 +332,10 @@
                         new VectorLayer({
                             title: 'vectorSourcepk',
                             source: this.vectorSourcepk
+                        }),
+                        new VectorLayer({
+                            title: 'vectorSourceChantier',
+                            source: this.vectorSourceChantier
                         })
                     ],
                     view: new View({
@@ -308,6 +344,32 @@
                     })
                 });
                 this.setupClick()
+
+                /*
+                 * get roadwork and markers
+                 */
+                if(this.action === 'edit'){
+                    console.log(this.project);
+                    /*
+                    *  get roadwork and show it on map
+                    */
+                    let coordaddDebutChantier = proj.transform([parseFloat(this.project.from_long), parseFloat(this.project.from_lat)], 'EPSG:4326', 'EPSG:3857');
+                    let coordaddFinChantier = proj.transform([parseFloat(this.project.to_long), parseFloat(this.project.to_lat)], 'EPSG:4326', 'EPSG:3857');
+                    this.addDebutChantier(coordaddDebutChantier);
+                    this.addFinChantier(coordaddFinChantier);
+                    /*
+                   *  get markers and show it on map
+                   */
+                    this.project.markers.forEach(marker => {
+                        let coordaddmarker = proj.transform([parseFloat(marker.longitude), parseFloat(marker.latitude)], 'EPSG:4326', 'EPSG:3857');
+                        this.addMarker(coordaddmarker);
+                    })
+
+
+                }
+
+
+
                 /*
                  * MAINTENANT ON MET EN PLACE LE TRACKER
                  */
