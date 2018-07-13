@@ -94,14 +94,14 @@
                     /*
                      * on cree un point et un vecteur avec ces coordonnée
                      */
-                    let geometry = new Point(coordPosRealTime);
+                     let geometry = new Point(coordPosRealTime);
                      markerpoint = new Feature(geometry);
-                    markerpoint.draggable = true;
-                    this.map.getView().animate({center: coordPosRealTime, zoom: 18});
+                     markerpoint.draggable = true;
+                     this.map.getView().animate({center: coordPosRealTime, zoom: 18});
                 }else{
-                    let geometry = new Point(coord);
+                     let geometry = new Point(coord);
                      markerpoint = new Feature(geometry);
-                    markerpoint.draggable = false;
+                     markerpoint.draggable = false;
                 }
 
 
@@ -110,7 +110,7 @@
                         anchor: [0.5, 46],
                         anchorXUnits: 'fraction',
                         anchorYUnits: 'pixels',
-                        src: 'https://openlayers.org/en/v4.6.5/examples/data/icon.png',
+                        src: './assets/markers/marker.png',
                         size : [32,48]
                     }))
                 });
