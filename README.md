@@ -5,12 +5,12 @@ TODO: Introduction text
  
 Clone the repository
 ```shell
-git clone https://github.com/NicolasMica/da-vinci.git
+git clone https://github.com/NicolasMica/geodesia.git
 ````
  
 Install NPM dependencies
 ```shell
-cd da-vinci
+cd geodesia
 npm install
 ```
 
