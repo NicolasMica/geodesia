@@ -1,4 +1,4 @@
-# DaVinvi
+# Geodesia
 TODO: Introduction text
 
 ### Getting started
